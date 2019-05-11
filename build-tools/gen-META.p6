@@ -15,9 +15,9 @@ my $m = META6.new(
     tags           => <threads async>,
     authors        => ['Vadim Belman <vrurg@cpan.org>'],
     auth           => 'github:vrurg',
-    source-url     => 'https://github.com/vrurg/Perl6-Async-Workers/tree/v0.0',
+    source-url     => 'https://github.com/vrurg/Perl6-Async-Workers.git',
     support        => META6::Support.new(
-        source          => 'https://github.com/vrurg/Perl6-Async-Workers/tree/v0.0',
+        source          => 'https://github.com/vrurg/Perl6-Async-Workers.git',
     ),
     provides => {
         'Async::Workers' => 'lib/Async/Workers.pm6',
