@@ -122,7 +122,7 @@ behaviour might and very likely will change in the future.
 Dynamically set high and low queue thresholds. The high might be set to C<Inf> to define unlimited queue size. Note that
 this would translate into undefined value of C<hi-threshold> attribute.
 
-=head1 HELPE SUBS
+=head1 HELPER SUBS
 
 =head2 C<stop-worker>
 
@@ -141,20 +141,24 @@ Bypass to C<$wm.await>. See L<#SYNOPSIS>.
 
 =head1 PROCEDURAL
 
-Procedural interface hides a common singleton object behind it. The following subs are exported by the module:
+Procedural interface hides a singleton object behind it. The following subs are exported by the module:
 
-=head2 C<async-workers( |params --> Async::Workers:D )>
+=head2 C«async-workers( |params --> Async::Workers:D )»
 
 Returns the singleton object. Creates it if necessary. If supplied with parameters they're passed to the constructor. If
 singleton is already created then the parameters are ignored.
 
 =head2 C<do-async>
 
-Bypass to the corresponding method on the singleton.
+Bypasses to the corresponding method on the singleton.
+
+    do-async: {
+        note "My task";
+    }
 
 =head2 C<shutdown-workers>
 
-Bypass to C<shutdown> on the singelton.
+Bypasses to C<shutdown> on the singelton.
 
 =end pod
 
