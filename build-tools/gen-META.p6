@@ -6,7 +6,7 @@ use Async::Workers;
 
 my $m = META6.new(
     name           => 'Async::Workers',
-    description    => 'Manager for threaded asynchronous workers',
+    description    => 'Asynchronous threaded workers',
     version        => Async::Workers.^ver,
     perl-version   => Version.new('6.d'),
     depends        => [ <AttrX::Mooish> ],

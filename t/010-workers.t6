@@ -15,12 +15,12 @@ subtest "Basics" => {
     sleep .1;
     is $w.workers, 10, "Vivified all workers on demand";
 
-    $w.set-max-workers(15);
+    $w.workers(15);
 
     sleep .1;
     is $w.workers, 15, "Started 5 additional";
 
-    $w.set-max-workers(12);
+    $w.workers(12);
 
     sleep .1;
     is $w.workers, 12, "Shut down 3 workers";

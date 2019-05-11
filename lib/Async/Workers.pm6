@@ -1,4 +1,130 @@
 use v6.d;
+
+=begin pod
+=head1 NAME
+
+C<Async::Workers> - Asynchronous threaded workers
+
+=head1 SYNOPSIS
+
+    use Async::Workers;
+
+    my $wm = Async::Workers.new;
+
+    for 1..10 -> $n {
+        $wm.do-async: {
+            sleep 1.rand;
+            say "Worker #$n";
+        }
+    }
+
+    await $wm;
+
+=head1 DESCRIPTION
+
+This module provides an easy way to execute a number of tasks in parallel while allowing to limit the number of
+simultaneous workers. I.e. it won't consume more more resources than a user would consider reasonable.
+
+Both OO and procedural interfaces are provided.
+
+=head2 Terminology
+
+An instance of C<Async::Workers> class is called I<worker manager> or just I<manager>.
+
+=head2 How it works.
+
+The goal is achieved by combining a queue of tasks and a number of pre-spawned threads for workers. A task is picked
+from the queue by a currently unoccupied worker and gets executed. The number of workers can be defined by a user.
+
+By default the size of the queue is not limited. But if there expected to be a big numebr of tasks with an average
+completion time higher than the time needed to create a new task, the growing queue may consume too much of available
+resources. This would eliminate any possible advantage of parallilizing.
+
+To prevent such scenario the user can set low and high thresholds on the queue size. So, when the queue reaches the high
+threshold it would stop accepting new tasks. From user perspective it means that C<do-async> would block until the queue
+size would reduce to the low threshold.
+
+The worker manager doesn't start workers until first task is been sent to the queue. It is also possible to shutdown all
+workers if they're no longer needed.
+
+In addition to workers the manager starts a monitoring thread which overlooks the workers. The monitor starts all
+workers and it shutdowns after they all are stopped.
+
+=head1 ATTRIBUTES
+
+=head2 C<max-workers>
+
+Maximum number of workers. Defaults to 10.
+
+=head2 C<client>
+
+Client object is the object which wants to implement a worker replacing the default one. In this case the object must
+have a C<worker> method using the following template:
+
+    method worker ( Channel $queue ) {
+        react {
+            whenever $queue -> $task {
+                ...
+                $task.run;
+                ...
+            }
+        }
+    }
+
+B<Note> that it is mandatory to use C<.run> method of the C<$task> object or certain functionality would be broken.
+
+=head2 C<lo-threshold>, C<hi-threshold>
+
+Low and high thresholds of the queue size.
+
+=head2 C<queued>
+
+Current queue size.
+
+=head2 C<running>
+
+The number of currently occupied workers.
+
+=head1 METHODS
+
+=head2 C<do-async( &code, |params )>
+
+Takes a C<&code> object and turns it into a task. C<params> are passed to C<&code> when it gets executed.
+
+This method blocks if C<hi-threshold> is defined and the queue size has reached the limit.
+
+=head2 C<await>
+
+Awaits for all workers to complete. See L<#SYNOPSIS>.
+
+=head2 C<shutdown>
+
+Await until all workers complete and stop them. Blocks until the queue is emtied and all workers stopped.
+
+=head2 C<workers>
+
+Returns the number of started workers.
+
+=head2 C<workers( UInt $num )>
+
+Sets the number of workers. Can be used at runtime without shutting down the manager.
+
+If user increases the number of workers then the monitor would start as many additional ones as necessary.
+
+On the contrary, if the number of workers is reduced then monitor request as many of them to stop as needed to meet
+user's demand. B<Note> that current implementation does it by installing special tasks into the queue. It means that for
+a really long queue it may take quite significant time before the surplus workers receive the command to stop. This
+behaviour might and very likely will change in the future.
+
+=head2 C<set-threshold( UInt :$lo, Num :$hi )>
+
+Dynamically set high and low queue thresholds. The high might be set to C<Inf> to define unlimited queue size. Note that
+this would translate into undefined value of C<hi-threshold> attribute.
+
+Set the number of
+
+=end pod
+
 unit class Async::Workers:ver<0.0.1>;
 use AttrX::Mooish;
 use Async::Msg;
@@ -17,25 +143,26 @@ class AWCode {
 
     method run {
         $.manager!Async::Workers::dec-queue;
-        $.manager.call-worker-code(self);
+        $.manager!Async::Workers::call-worker-code(self);
     }
 }
 
 has UInt $.max-workers = 10;
-has %!workers;
-has Bool $!shutdown;
-has Channel $!queue is mooish(:lazy, :clearer);
-has Promise $!monitor;
 has $.client; # Client object – the one which will provide .worker method
-has Lock $.wl .= new;
-
 has UInt $.lo-threshold is mooish(:lazy);
 has UInt $.hi-threshold;
 has atomicint $.queued = 0;
 has atomicint $.running = 0;
+
+has %!workers;
+has Bool $!shutdown;
+has Channel $!queue is mooish(:lazy, :clearer);
+has Promise $!monitor;
+
 has Promise $!overflow;
 has $!overflow-vow;
 has Lock $!overflow-lock .= new;
+has Lock $!wl .= new;
 
 has Supplier $!messages .= new;
 
@@ -83,13 +210,13 @@ method !check-workers {
             with $.client {
                 .worker($!queue);
             } else {
-                self.worker
+                self!worker
             }
-            $.wl.protect: {
+            $!wl.protect: {
                 %!workers{ $worker.WHICH }:delete;
             }
         }
-        $.wl.protect: {
+        $!wl.protect: {
             %!workers{ $worker.WHICH } = $worker;
         }
     }
@@ -103,7 +230,7 @@ method !run-monitor {
     await %!workers.values if %!workers.elems > 0;
 }
 
-method call-worker-code (AWCode:D $evt) {
+method !call-worker-code (AWCode:D $evt) {
     $!running⚛++;
     $evt.code.(|$evt.params);
     LEAVE {
@@ -122,7 +249,7 @@ method call-worker-code (AWCode:D $evt) {
     }
 }
 
-method worker {
+method !worker {
     react {
         whenever $!queue -> $evt {
             $evt.run;
@@ -131,7 +258,7 @@ method worker {
 }
 
 method shutdown {
-    return unless $.wl.protect: { %!workers.elems };
+    return unless $!wl.protect: { %!workers.elems };
     $!shutdown = True;
     $!queue.close;
     await $!monitor;
@@ -167,9 +294,9 @@ method set-threshold(UInt :$lo where * > 0, Num :$hi where * > 0) {
     $!hi-threshold = ( $_ ~~ Inf ?? Nil !! $_ ) with $hi;
 }
 
-method set-max-workers (UInt $max where * > 0) {
+multi method workers (UInt:D $max where * > 0) {
     return if $max == $!max-workers;
-    $.wl.protect: {
+    $!wl.protect: {
         my $old-max = $!max-workers;
         $!max-workers = $max;
 
@@ -185,8 +312,8 @@ method set-max-workers (UInt $max where * > 0) {
     }
 }
 
-method workers ( --> UInt ) {
-    $.wl.protect: { %!workers.elems }
+multi method workers ( --> UInt ) {
+    $!wl.protect: { %!workers.elems }
 }
 
 method !inc-queue {
@@ -214,3 +341,20 @@ method !dec-queue {
         }
     }
 }
+
+=begin pod
+
+=head1 AUTHOR
+
+Vadim Belman <vrurg@cpan.org>
+
+=head1 LICENSE
+
+Artistic License 2.0
+
+See the LICENSE file in this distribution.
+
+=end pod
+
+# Copyright (c) 2019, Vadim Belman <vrurg@cpan.org>
+# vim: ft=perl6
