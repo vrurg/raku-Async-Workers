@@ -9,7 +9,7 @@ C<Async::Workers> - Asynchronous threaded workers
 
     use Async::Workers;
 
-    my $wm = Async::Workers.new;
+    my $wm = Async::Workers.new( :max-workers(5) );
 
     for 1..10 -> $n {
         $wm.do-async: {
@@ -33,8 +33,9 @@ An instance of C<Async::Workers> class is called I<worker manager> or just I<man
 
 =head2 How it works.
 
-The goal is achieved by combining a queue of tasks and a number of pre-spawned threads for workers. A task is picked
-from the queue by a currently unoccupied worker and gets executed. The number of workers can be defined by a user.
+The goal is achieved by combining a I<queue of tasks> and a number of pre-spawned threads for I<workers>. A I<task> is
+picked from the queue by a currently unoccupied worker and associated with it code object gets executed. The number of
+workers can be defined by a user.
 
 By default the size of the queue is not limited. But if there expected to be a big numebr of tasks with an average
 completion time higher than the time needed to create a new task, the growing queue may consume too much of available

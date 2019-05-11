@@ -8,7 +8,7 @@ SYNOPSIS
 
     use Async::Workers;
 
-    my $wm = Async::Workers.new;
+    my $wm = Async::Workers.new( :max-workers(5) );
 
     for 1..10 -> $n {
         $wm.do-async: {
@@ -34,7 +34,7 @@ An instance of `Async::Workers` class is called *worker manager* or just *manage
 How it works.
 -------------
 
-The goal is achieved by combining a queue of tasks and a number of pre-spawned threads for workers. A task is picked from the queue by a currently unoccupied worker and gets executed. The number of workers can be defined by a user.
+The goal is achieved by combining a *queue of tasks* and a number of pre-spawned threads for *workers*. A *task* is picked from the queue by a currently unoccupied worker and associated with it code object gets executed. The number of workers can be defined by a user.
 
 By default the size of the queue is not limited. But if there expected to be a big numebr of tasks with an average completion time higher than the time needed to create a new task, the growing queue may consume too much of available resources. This would eliminate any possible advantage of parallilizing.
 
