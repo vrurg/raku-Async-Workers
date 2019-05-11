@@ -21,6 +21,7 @@ my $m = META6.new(
     ),
     provides => {
         'Async::Workers' => 'lib/Async/Workers.pm6',
+        'Async::Msg'     => 'lib/Async/Msg.pm6',
     },
     license        => 'Artistic-2.0',
     production     => False,
