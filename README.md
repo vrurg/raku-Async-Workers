@@ -123,8 +123,8 @@ On the contrary, if the number of workers is reduced then monitor request as man
 
 Dynamically set high and low queue thresholds. The high might be set to `Inf` to define unlimited queue size. Note that this would translate into undefined value of `hi-threshold` attribute.
 
-HELPE SUBS
-==========
+HELPER SUBS
+===========
 
 `stop-worker`
 -------------
@@ -145,9 +145,9 @@ Bypass to `$wm.await`. See [SYNOPSIS](#SYNOPSIS).
 PROCEDURAL
 ==========
 
-Procedural interface hides a common singleton object behind it. The following subs are exported by the module:
+Procedural interface hides a singleton object behind it. The following subs are exported by the module:
 
-`async-workers( |params --` Async::Workers:D )>
+`async-workers( |params --> Async::Workers:D )`
 -----------------------------------------------
 
 Returns the singleton object. Creates it if necessary. If supplied with parameters they're passed to the constructor. If singleton is already created then the parameters are ignored.
@@ -155,12 +155,16 @@ Returns the singleton object. Creates it if necessary. If supplied with paramete
 `do-async`
 ----------
 
-Bypass to the corresponding method on the singleton.
+Bypasses to the corresponding method on the singleton.
+
+    do-async: {
+        note "My task";
+    }
 
 `shutdown-workers`
 ------------------
 
-Bypass to `shutdown` on the singelton.
+Bypasses to `shutdown` on the singelton.
 
 AUTHOR
 ======
