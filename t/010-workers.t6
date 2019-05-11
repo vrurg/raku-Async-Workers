@@ -1,0 +1,99 @@
+use v6.d;
+use Test;
+use Async::Workers;
+
+plan 3;
+
+subtest "Basics" => {
+    plan 6;
+    my $w = Async::Workers.new(:max-workers(10));
+
+    is $w.workers, 0, "No workers on start";
+
+    $w.do-async: {pass "Async job"};
+
+    sleep .1;
+    is $w.workers, 10, "Vivified all workers on demand";
+
+    $w.set-max-workers(15);
+
+    sleep .1;
+    is $w.workers, 15, "Started 5 additional";
+
+    $w.set-max-workers(12);
+
+    sleep .1;
+    is $w.workers, 12, "Shut down 3 workers";
+
+    $w.shutdown;
+
+    sleep .1;
+    is $w.workers, 0, "Shut down all workers";
+}
+
+subtest "Limited queue" => {
+    plan 1;
+    my $w = Async::Workers.new(:hi-threshold(20));
+
+    my $last-queue-size = 0;
+    my $decreasing = False;
+    my $reduce-count = 0;
+    for 1...100 -> $cnt {
+        $w.do-async: {
+            sleep .1;
+        };
+
+        if $last-queue-size > $w.queued and !$decreasing {
+            $decreasing = True;
+            $reduce-count++;
+        }
+        elsif $last-queue-size < $w.queued {
+            $decreasing = False;
+        }
+
+        $last-queue-size = $w.queued;
+    }
+
+    is $reduce-count, 8, "queue reduction count";
+
+    $w.shutdown;
+}
+
+subtest "Await Workers" => {
+    plan 3;
+
+    my $w = Async::Workers.new;
+
+    my $awaited = False;
+
+    await Promise.anyof:
+        Promise.in(.1),
+        start {
+            $w.await;
+            $awaited  = True;
+        };
+
+    ok $awaited, "await on fresh state";
+
+    my atomicint $counter ⚛= 0;
+    for 1..20 {
+        $w.do-async: {
+            sleep .1.rand;
+            $counter⚛++;
+        }
+    }
+
+    $awaited = False;
+    await Promise.anyof:
+        Promise.in(10),
+        start {
+            $w.await;
+            $awaited = True;
+        };
+
+    ok $awaited, "await for non-finished queue";
+
+    is $counter, 20, "all workers completed";
+}
+
+done-testing;
