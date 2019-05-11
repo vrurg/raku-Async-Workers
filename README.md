@@ -34,15 +34,15 @@ An instance of `Async::Workers` class is called *worker manager* or just *manage
 How it works.
 -------------
 
-The goal is achieved by combining a *queue of tasks* and a number of pre-spawned threads for *workers*. A *task* is picked from the queue by a currently unoccupied worker and associated with it code object gets executed. The number of workers can be defined by a user.
+The goal is achieved by combining a *queue of tasks* and a number of pre-spawned threads for *workers*. A *task* is picked from the queue by a currently unoccupied worker and a code object associated with it gets executed. The number of workers can be defined by a user.
 
-By default the size of the queue is not limited. But if there expected to be a big numebr of tasks with an average completion time higher than the time needed to create a new task, the growing queue may consume too much of available resources. This would eliminate any possible advantage of parallilizing.
+By default the size of the queue is not limited. But if there expected to be a big numebr of tasks with an average task completion time higher than the time needed to create a new one, the growing queue may consume too much of available resources. This would eliminate any possible advantage of parallelizing.
 
-To prevent such scenario the user can set low and high thresholds on the queue size. So, when the queue reaches the high threshold it would stop accepting new tasks. From user perspective it means that `do-async` would block until the queue size would reduce to the low threshold.
+To prevent such scenario the user can set low and high thresholds on the queue size. So, when the queue reaches the high threshold it would stop accepting new tasks. From user perspective it means that `do-async` would block until the queue size is reduced to the low threshold.
 
 The worker manager doesn't start workers until first task is been sent to the queue. It is also possible to shutdown all workers if they're no longer needed.
 
-In addition to workers the manager starts a monitoring thread which overlooks the workers. The monitor starts all workers and it shutdowns after they all are stopped.
+In addition to workers the manager starts a monitoring thread which overlooks the workers. As a matter of fact, it's the monitor starts all workers. It is also shutdowns after they all are stopped.
 
 ATTRIBUTES
 ==========
@@ -123,7 +123,44 @@ On the contrary, if the number of workers is reduced then monitor request as man
 
 Dynamically set high and low queue thresholds. The high might be set to `Inf` to define unlimited queue size. Note that this would translate into undefined value of `hi-threshold` attribute.
 
-Set the number of
+HELPE SUBS
+==========
+
+`stop-worker`
+-------------
+
+If called from within a task code it would cause the worker executing that task to stop. If this would reduce the number of workers to less than `max-workers` then the monitor would start a new one:
+
+    $wm.do-async: {
+        if $something-went-wrong {
+            stop-worker
+        }
+    }
+
+`await( Async::Workers:D $wm )`
+-------------------------------
+
+Bypass to `$wm.await`. See [SYNOPSIS](#SYNOPSIS).
+
+PROCEDURAL
+==========
+
+Procedural interface hides a common singleton object behind it. The following subs are exported by the module:
+
+`async-workers( |params --` Async::Workers:D )>
+-----------------------------------------------
+
+Returns the singleton object. Creates it if necessary. If supplied with parameters they're passed to the constructor. If singleton is already created then the parameters are ignored.
+
+`do-async`
+----------
+
+Bypass to the corresponding method on the singleton.
+
+`shutdown-workers`
+------------------
+
+Bypass to `shutdown` on the singelton.
 
 AUTHOR
 ======
