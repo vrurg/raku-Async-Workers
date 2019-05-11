@@ -1,40 +1,40 @@
 {
-  "license": "Artistic-2.0",
-  "version": "0.0.1",
-  "production": false,
-  "source-url": "https://github.com/vrurg/Perl6-Async-Workers.git",
   "description": "Asynchronous threaded workers",
-  "test-depends": [
-    "Test",
-    "Test::META",
-    "Test::When"
-  ],
-  "authors": [
-    "Vadim Belman <vrurg@cpan.org>"
-  ],
+  "license": "Artistic-2.0",
   "build-depends": [
     "META6",
     "p6doc",
     "Pod::To::Markdown"
   ],
-  "name": "Async::Workers",
-  "meta-version": "0",
-  "provides": {
-    "Async::Workers": "lib/Async/Workers.pm6"
+  "depends": [
+    "AttrX::Mooish"
+  ],
+  "production": false,
+  "support": {
+    "source": "https://github.com/vrurg/Perl6-Async-Workers.git"
   },
+  "name": "Async::Workers",
+  "resources": [
+    
+  ],
+  "auth": "github:vrurg",
+  "test-depends": [
+    "Test",
+    "Test::META",
+    "Test::When"
+  ],
+  "perl": "6.d",
   "tags": [
     "threads",
     "async"
   ],
-  "support": {
-    "source": "https://github.com/vrurg/Perl6-Async-Workers.git"
+  "provides": {
+    "Async::Workers": "lib/Async/Workers.pm6"
   },
-  "perl": "6.d",
-  "depends": [
-    "AttrX::Mooish"
-  ],
-  "resources": [
-    
-  ],
-  "auth": "github:vrurg"
+  "version": "0.0.901",
+  "meta-version": "0",
+  "source-url": "https://github.com/vrurg/Perl6-Async-Workers.git",
+  "authors": [
+    "Vadim Belman <vrurg@cpan.org>"
+  ]
 }
