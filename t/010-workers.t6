@@ -1,6 +1,7 @@
 use v6.d;
 use Test;
 use Async::Workers;
+use Async::Msg;
 
 plan 3;
 
@@ -32,31 +33,42 @@ subtest "Basics" => {
 }
 
 subtest "Limited queue" => {
-    plan 1;
-    my $w = Async::Workers.new(:hi-threshold(20));
+    plan 50;
+    my @w;
+    for 1..50 {
+        my $w = Async::Workers.new(:hi-threshold(20));
+        # @w.push: $w;
 
-    my $last-queue-size = 0;
-    my $decreasing = False;
-    my $reduce-count = 0;
-    for 1...100 -> $cnt {
-        $w.do-async: {
-            sleep .1;
+        my atomicint $fulls = 0;
+        my atomicint $lows = 0;
+        my atomicint $empties = 0;
+
+        $w.on_msg: -> $msg {
+            if $msg ~~ Async::Msg::Queue {
+                given $msg.status {
+                    when QFull {
+                        $fulls⚛++;
+                    }
+                    when QEmpty {
+                        $empties⚛++;
+                    }
+                    when QLow {
+                        $lows⚛++;
+                    }
+                }
+            }
         };
 
-        if $last-queue-size > $w.queued and !$decreasing {
-            $decreasing = True;
-            $reduce-count++;
-        }
-        elsif $last-queue-size < $w.queued {
-            $decreasing = False;
+        for 1...100 -> $cnt {
+            $w.do-async: {
+                sleep .01;
+            };
         }
 
-        $last-queue-size = $w.queued;
+        $w.shutdown;
+
+        ok $fulls > 1, "queue full";
     }
-
-    is $reduce-count, 8, "queue reduction count";
-
-    $w.shutdown;
 }
 
 subtest "Await Workers" => {
