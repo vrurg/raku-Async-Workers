@@ -162,7 +162,7 @@ Bypasses to C<shutdown> on the singelton.
 
 =end pod
 
-unit class Async::Workers:ver<0.0.3>;
+unit class Async::Workers:ver<0.0.4>;
 use Async::Msg;
 
 my $singleton;
