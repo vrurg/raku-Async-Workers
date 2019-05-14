@@ -163,7 +163,7 @@ Bypasses to C<shutdown> on the singelton.
 =end pod
 
 unit class Async::Workers:ver<0.0.902>;
-use AttrX::Mooish;
+# use AttrX::Mooish;
 use Async::Msg;
 
 my $singleton;
@@ -186,19 +186,20 @@ class AWCode {
 
 has UInt $.max-workers = 10;
 has $.client; # Client object – the one which will provide .worker method
-has UInt $.lo-threshold is mooish(:lazy);
+has UInt $.lo-threshold;
+# has UInt $.lo-threshold is mooish(:lazy);
 has UInt $.hi-threshold;
 has atomicint $.queued = 0;
 has atomicint $.running = 0;
 
 has %!workers;
 has Bool $!shutdown;
-has Channel $!queue is mooish(:lazy, :clearer);
+# has Channel $!queue is mooish(:lazy, :clearer);
+has Channel $!queue;
 has Promise $!monitor;
 
-has Promise $!overflow;
-has $!overflow-vow;
-has Lock $!overflow-lock .= new;
+has Lock $!ql .= new;
+has $!overflow = $!ql.condition;
 has Lock $!wl .= new;
 
 has Supplier $!messages .= new;
@@ -211,9 +212,16 @@ sub async-workers (|c) is export {
 }
 
 submethod TWEAK(|) {
-    die "High queue threshold ($!hi-threshold) can'b lower than the low ($!lo-threshold)"
+    $!lo-threshold //= $!max-workers;
+    die "High queue threshold ($!hi-threshold) can't be lower than the low ($!lo-threshold)"
         if $!lo-threshold > ($!hi-threshold // Inf);
 }
+
+submethod DESTROY {
+    note "**** DESTROY ****";
+}
+
+# method build-lo-threshold { $!max-workers }
 
 sub do-async (|c) is export {
     async-workers.do-async(|c)
@@ -227,13 +235,24 @@ multi await ( Async::Workers:D $wm ) is export {
     $wm.await
 }
 
-method !build-queue {
-    $!shutdown = False;
-    self!start-monitor;
-    Channel.new;
+# method !build-queue { # For Attrx::Mooish
+#     $!shutdown = False;
+#     self!start-monitor;
+#     Channel.new;
+# }
+
+method !queue {
+    unless $!queue {
+        $!shutdown = False;
+        self!start-monitor;
+        $!queue = Channel.new;
+    }
+    $!queue
 }
 
-method build-lo-threshold { $!max-workers }
+method !clear-queue {
+    $!queue = Nil;
+}
 
 method !start-monitor {
     return if $!monitor && $!monitor.status ~~ Planned;
@@ -245,12 +264,17 @@ method !check-workers {
     while %!workers.elems < $.max-workers {
         my $worker = start {
             with $.client {
-                .worker($!queue);
+                .worker(self!queue);
             } else {
                 self!worker
             }
             $!wl.protect: {
                 %!workers{ $worker.WHICH }:delete;
+            }
+            CATCH {
+                default {
+                    .rethrow;
+                }
             }
         }
         $!wl.protect: {
@@ -260,21 +284,37 @@ method !check-workers {
 }
 
 method !run-monitor {
+    $!messages.Supply.act: -> $msg {
+        given $msg {
+            when Async::Msg::Workers {
+                given .status {
+                    when WEnter {
+                        $!running⚛++;
+                    }
+                    when WComplete {
+                        $!running⚛--;
+                        if $!running == 0 {
+                            $!messages.emit: Async::Msg::Workers.new( status => WNone );
+                        }
+                    }
+                }
+            }
+        }
+    };
+    my @v;
     until $!shutdown {
         self!check-workers;
-        my $rc = await Promise.anyof( |%!workers.values );
+        @v = %!workers.values; # Workaround for MoarVM/MoarVM#1101
+        await Promise.anyof( @v );
     }
-    await %!workers.values if %!workers.elems > 0;
+    await @v if %!workers.elems > 0;
 }
 
 method !call-worker-code (AWCode:D $evt) {
-    $!running⚛++;
+    $!messages.emit: Async::Msg::Workers.new( status => WEnter );
     $evt.code.(|$evt.params);
     LEAVE {
-        $!running⚛--;
-        if $!running == 0 {
-            $!messages.emit( Async::Msg::Workers.new( status => WNone ) )
-        }
+        $!messages.emit: Async::Msg::Workers.new( status => WComplete );
     }
     CONTROL {
         when CX::AW::StopWorker {
@@ -288,7 +328,7 @@ method !call-worker-code (AWCode:D $evt) {
 
 method !worker {
     react {
-        whenever $!queue -> $evt {
+        whenever self!queue -> $evt {
             $evt.run;
         }
     }
@@ -297,7 +337,7 @@ method !worker {
 method shutdown {
     return unless $!wl.protect: { %!workers.elems };
     $!shutdown = True;
-    $!queue.close;
+    self!queue.close;
     await $!monitor;
     self!clear-queue;
     $!queued ⚛= 0;
@@ -315,10 +355,10 @@ method await ( --> Nil ) {
 }
 
 method do-async (&code, |params) {
-    my $closed = $!queue.closed;
+    my $closed = self!queue.closed;
     unless $closed.status ~~ Kept {
         self!inc-queue;
-        $!queue.send(
+        self!queue.send(
             AWCode.new( :&code, :params(params), :manager(self) )
         );
     }
@@ -353,29 +393,32 @@ multi method workers ( --> UInt ) {
     $!wl.protect: { %!workers.elems }
 }
 
+method on_msg ( &code ) {
+    $!messages.Supply.tap: &code;
+}
+
+has Int $.qfull = 0;
 method !inc-queue {
+    $!ql.lock;
     if $!hi-threshold.defined and $!queued >= $!hi-threshold {
-        $!overflow-lock.protect: {
-            unless $!overflow.defined and $!overflow.status ~~ Planned {
-                $!overflow = Promise.new;
-                $!overflow-vow = $!overflow.vow;
-            }
-        }
-        await $!overflow;
-        $!overflow-lock.protect: {
-            $!overflow = Nil;
-            $!overflow-vow = Nil;
-        }
+        $!overflow.wait;
     }
     $!queued⚛++;
+    if $!hi-threshold.defined and $!queued == $!hi-threshold {
+        $!qfull++;
+        $!messages.emit(
+            Async::Msg::Queue.new(status => QFull)
+        );
+    }
+    LEAVE {
+        $!ql.unlock;
+    }
 }
 
 method !dec-queue {
     $!queued⚛--;
-    $!overflow-lock.protect: {
-        if $!queued <= $!lo-threshold && $!overflow-vow {
-            $!overflow-vow.keep(True);
-        }
+    if $!queued <= $!lo-threshold {
+        $!overflow.signal_all;
     }
 }
 
