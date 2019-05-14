@@ -162,7 +162,7 @@ Bypasses to C<shutdown> on the singelton.
 
 =end pod
 
-unit class Async::Workers:ver<0.0.902>;
+unit class Async::Workers:ver<0.0.903>;
 # use AttrX::Mooish;
 use Async::Msg;
 
@@ -215,10 +215,6 @@ submethod TWEAK(|) {
     $!lo-threshold //= $!max-workers;
     die "High queue threshold ($!hi-threshold) can't be lower than the low ($!lo-threshold)"
         if $!lo-threshold > ($!hi-threshold // Inf);
-}
-
-submethod DESTROY {
-    note "**** DESTROY ****";
 }
 
 # method build-lo-threshold { $!max-workers }
