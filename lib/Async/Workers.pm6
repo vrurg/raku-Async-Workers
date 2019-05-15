@@ -153,7 +153,7 @@ singleton is already created then the parameters are ignored.
 Bypasses to the corresponding method on the singleton.
 
     do-async: {
-        note "My task";
+        say "My task";
     }
 
 =head2 C<shutdown-workers>
@@ -197,9 +197,9 @@ has Bool $!shutdown;
 has Channel $!queue;
 has Promise $!monitor;
 
-has Lock $!ql .= new;
+has Lock $!ql .= new; # Queue lock
 has $!overflow = $!ql.condition;
-has Lock $!wl .= new;
+has Lock $!wl .= new; # Workers lock
 
 has Supplier $!messages .= new;
 
@@ -237,21 +237,18 @@ multi await ( Async::Workers:D $wm ) is export {
 # }
 
 method !queue {
-    unless $!queue {
-        $!shutdown = False;
-        self!start-monitor;
-        $!queue = Channel.new;
+    $!ql.protect: {
+        unless $!queue {
+            $!shutdown = False;
+            self!start-monitor;
+            $!queue = Channel.new;
+        }
     }
     $!queue
 }
 
 method !clear-queue {
     $!queue = Nil;
-}
-
-method !start-monitor {
-    return if $!monitor && $!monitor.status ~~ Planned;
-    $!monitor = start { self!run-monitor };
 }
 
 method !check-workers {
@@ -278,6 +275,11 @@ method !check-workers {
     }
 }
 
+method !start-monitor {
+    return if $!monitor && $!monitor.status ~~ Planned;
+    $!monitor = start { self!run-monitor };
+}
+
 method !run-monitor {
     $!messages.Supply.act: -> $msg {
         given $msg {
@@ -287,8 +289,7 @@ method !run-monitor {
                         $!running⚛++;
                     }
                     when WComplete {
-                        $!running⚛--;
-                        if $!running == 0 {
+                        if --⚛$!running == 0 {
                             $!messages.emit: Async::Msg::Workers.new( status => WNone );
                         }
                     }
@@ -302,7 +303,7 @@ method !run-monitor {
         @v = %!workers.values; # Workaround for MoarVM/MoarVM#1101
         await Promise.anyof( @v );
     }
-    await @v if %!workers.elems > 0;
+    await @v if @v;
 }
 
 method !call-worker-code (AWCode:D $evt) {
