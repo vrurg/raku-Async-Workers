@@ -158,7 +158,7 @@ Returns the singleton object. Creates it if necessary. If supplied with paramete
 Bypasses to the corresponding method on the singleton.
 
     do-async: {
-        note "My task";
+        say "My task";
     }
 
 `shutdown-workers`
