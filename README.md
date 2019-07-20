@@ -94,11 +94,6 @@ Takes a `&code` object and turns it into a task. `params` are passed to `&code` 
 
 This method blocks if `hi-threshold` is defined and the queue size has reached the limit.
 
-`await`
--------
-
-Awaits for all workers to complete. See [SYNOPSIS](#SYNOPSIS).
-
 `shutdown`
 ----------
 
@@ -136,11 +131,6 @@ If called from within a task code it would cause the worker executing that task 
             stop-worker
         }
     }
-
-`await( Async::Workers:D $wm )`
--------------------------------
-
-Bypass to `$wm.await`. See [SYNOPSIS](#SYNOPSIS).
 
 PROCEDURAL
 ==========
