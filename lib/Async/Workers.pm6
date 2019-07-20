@@ -94,10 +94,6 @@ Takes a C<&code> object and turns it into a task. C<params> are passed to C<&cod
 
 This method blocks if C<hi-threshold> is defined and the queue size has reached the limit.
 
-=head2 C<await>
-
-Awaits for all workers to complete. See L<#SYNOPSIS>.
-
 =head2 C<shutdown>
 
 Await until all workers complete and stop them. Blocks until the queue is emtied and all workers stopped.
@@ -135,10 +131,6 @@ of workers to less than C<max-workers> then the monitor would start a new one:
         }
     }
 
-=head2 C<await( Async::Workers:D $wm )>
-
-Bypass to C<$wm.await>. See L<#SYNOPSIS>.
-
 =head1 PROCEDURAL
 
 Procedural interface hides a singleton object behind it. The following subs are exported by the module:
@@ -162,7 +154,8 @@ Bypasses to C<shutdown> on the singelton.
 
 =end pod
 
-unit class Async::Workers:ver<0.0.904>;
+unit class Async::Workers:ver<0.0.905>;
+also does Awaitable;
 use Async::Msg;
 
 my $singleton;
@@ -226,10 +219,6 @@ sub shutdown-workers is export {
     $singleton.shutdown if $singleton;
 }
 
-multi await ( Async::Workers:D $wm ) is export {
-    $wm.await
-}
-
 # method !build-queue { # For Attrx::Mooish
 #     $!shutdown = False;
 #     self!start-monitor;
@@ -281,7 +270,7 @@ method !start-monitor {
 }
 
 method !run-monitor {
-    $!messages.Supply.act: -> $msg {
+    $!messages.Supply.tap: -> $msg {
         given $msg {
             when Async::Msg::Workers {
                 given .status {
@@ -300,7 +289,7 @@ method !run-monitor {
     my @v;
     until $!shutdown {
         self!check-workers;
-        @v = %!workers.values; # Workaround for MoarVM/MoarVM#1101
+        @v = eager %!workers.values; # Workaround for MoarVM/MoarVM#1101
         await Promise.anyof( @v );
     }
     await @v if @v;
@@ -339,14 +328,37 @@ method shutdown {
     $!queued ⚛= 0;
 }
 
-method await ( --> Nil ) {
-    return unless $!queued;
-    react {
-        whenever $!messages -> $msg {
-            if $msg ~~ Async::Msg::Workers and $msg.status ~~ WNone {
-                done;
+my class AsyncWorkersAwaitHandle does Awaitable::Handle {
+    has &!add-subscriber;
+    method not-ready (&add-subscriber) {
+        use nqp;
+        nqp::create(self)!not-ready(&add-subscriber);
+    }
+    method !not-ready (&add-subscriber) {
+        $!already = False;
+        &!add-subscriber := &add-subscriber;
+        self
+    }
+    method subscribe-awaiter (&subscriber --> Nil) {
+        &!add-subscriber(&subscriber);
+    }
+}
+
+method get-await-handle ( --> Awaitable::Handle:D ) {
+    if $!queued {
+        AsyncWorkersAwaitHandle.not-ready: -> &on-ready {
+            start react {
+                whenever $!messages -> $msg {
+                    if $msg ~~ Async::Msg::Workers and $msg.status ~~ WNone {
+                        on-ready(True, Nil);
+                        done;
+                    }
+                }
             }
         }
+    }
+    else {
+        AsyncWorkersAwaitHandle.already-success(Nil);
     }
 }
 

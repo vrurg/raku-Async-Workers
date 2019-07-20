@@ -72,7 +72,7 @@ subtest "Limited queue" => {
 }
 
 subtest "Await Workers" => {
-    plan 3;
+    plan 5;
 
     my $w = Async::Workers.new;
 
@@ -81,31 +81,55 @@ subtest "Await Workers" => {
     await Promise.anyof:
         Promise.in(.1),
         start {
-            $w.await;
+            await $w;
             $awaited  = True;
         };
 
     ok $awaited, "await on fresh state";
 
     my atomicint $counter ⚛= 0;
+    my &code = {
+        sleep .1.rand;
+        $counter⚛++;
+    }
+
     for 1..20 {
-        $w.do-async: {
-            sleep .1.rand;
-            $counter⚛++;
-        }
+        $w.do-async: &code
     }
 
     $awaited = False;
     await Promise.anyof:
         Promise.in(10),
         start {
-            $w.await;
+            await $w;
             $awaited = True;
         };
 
     ok $awaited, "await for non-finished queue";
 
     is $counter, 20, "all workers completed";
+
+    my $w1 = Async::Workers.new(:max-workers(5));
+    my $w2 = Async::Workers.new(:max-workers(10));
+
+    $awaited = False;
+    $counter ⚛= 0;
+
+    for 1..20 {
+        $w1.do-async: &code;
+        $w2.do-async: &code;
+    }
+
+    await Promise.anyof:
+        Promise.in(20),
+        start {
+            await $w1, $w2;
+            $awaited = True;
+        };
+
+    ok $awaited, "await for non-finished queue on two managers";
+
+    is $counter, 40, "all workers of both managers completed";
 }
 
 done-testing;
