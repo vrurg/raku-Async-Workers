@@ -171,12 +171,12 @@ class AWCode {
     has Async::Workers:D $.manager is required;
 
     method run {
-        $.manager!Async::Workers::dec-queue;
         $.manager!Async::Workers::call-worker-code(self);
     }
 }
 
 has UInt $.max-workers = 10;
+has UInt $.max-queue = $!max-workers * 2;
 has $.client; # Client object – the one which will provide .worker method
 has UInt $.lo-threshold;
 # has UInt $.lo-threshold is mooish(:lazy);
@@ -299,6 +299,7 @@ method !call-worker-code (AWCode:D $evt) {
     $!messages.emit: Async::Msg::Workers.new( status => WEnter );
     $evt.code.(|$evt.params);
     LEAVE {
+        self!dec-queue;
         $!messages.emit: Async::Msg::Workers.new( status => WComplete );
     }
     CONTROL {
@@ -418,9 +419,7 @@ method !inc-queue {
             Async::Msg::Queue.new(status => QFull)
         );
     }
-    LEAVE {
-        $!ql.unlock;
-    }
+    LEAVE $!ql.unlock;
 }
 
 method !dec-queue {
