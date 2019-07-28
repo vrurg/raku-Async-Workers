@@ -169,6 +169,9 @@ class AWCode {
     has &.code is required;
     has Capture:D $.params = \();
     has Async::Workers:D $.manager is required;
+    has $.processed is rw = False;
+    my atomicint $id = 0;
+    has $.id = $id⚛++;
 
     method run {
         $.manager!Async::Workers::call-worker-code(self);
@@ -187,14 +190,19 @@ has atomicint $.running = 0;
 has %!workers;
 has Bool $!shutdown;
 # has Channel $!queue is mooish(:lazy, :clearer);
-has Channel $!queue;
+has Channel $!evt-queue;
 has Promise $!monitor;
 
-has Lock $!ql .= new; # Queue lock
-has $!overflow = $!ql.condition;
-has Lock $!wl .= new; # Workers lock
+has Lock::Async $!ql .= new; # Queue lock
+has Lock::Async $!wl .= new; # Workers lock
+
+has Lock $!qbl .= new ;
+has $!queue-block = $!qbl.condition;
+has atomicint $!queue-blocked = 0;
 
 has Supplier $!messages .= new;
+
+has $.debug = ? %*ENV<ASYNC_WORKERS_DEBUG>;
 
 sub stop-worker is export { CX::AW::StopWorker.new.throw }
 
@@ -226,18 +234,18 @@ sub shutdown-workers is export {
 # }
 
 method !queue {
-    $!ql.protect: {
-        unless $!queue {
+    $!ql.with-lock-hidden-from-recursion-check: {
+        unless $!evt-queue {
             $!shutdown = False;
             self!start-monitor;
-            $!queue = Channel.new;
+            $!evt-queue = Channel.new;
         }
     }
-    $!queue
+    $!evt-queue
 }
 
 method !clear-queue {
-    $!queue = Nil;
+    $!evt-queue = Nil;
 }
 
 method !check-workers {
@@ -291,31 +299,44 @@ method !run-monitor {
         self!check-workers;
         @v = eager %!workers.values; # Workaround for MoarVM/MoarVM#1101
         await Promise.anyof( @v );
+        note "%%%%%%%%%%%%%%% Re-check workers, active: ", %!workers.elems if $.debug;
     }
     await @v if @v;
 }
 
+has atomicint $!active-workers = 0;
 method !call-worker-code (AWCode:D $evt) {
     $!messages.emit: Async::Msg::Workers.new( status => WEnter );
+    $!active-workers⚛++;
     $evt.code.(|$evt.params);
     LEAVE {
-        self!dec-queue;
+        $!active-workers⚛--;
+        note "<<<<<<<<<<<< ACTIVE WORKERS LEFT: ", $!active-workers if $.debug;
         $!messages.emit: Async::Msg::Workers.new( status => WComplete );
-    }
-    CONTROL {
-        when CX::AW::StopWorker {
-            done();
-        }
-        default {
-            .rethrow
-        }
     }
 }
 
 method !worker {
+    note "Worker, entering react" if $.debug;
     react {
         whenever self!queue -> $evt {
+            note ">>>>>>>>> WORKER[{$*THREAD.id.fmt: "%3d"}] {self.WHICH} ENTER, queued: ", $!queued, "        " if $.debug;
             $evt.run;
+            LEAVE {
+                note "<<<<<<<<< WORKER[{$*THREAD.id.fmt: "%3d"}] {self.WHICH} DONE, queued: ", $!queued, " workers ", %!workers.elems, "         " if $.debug;
+                self!dec-queue;
+            }
+            CONTROL {
+                when CX::AW::StopWorker {
+                    $!active-workers⚛--;
+                    note "<<<<<<<<<<<< A WORKER[{$*THREAD.id}] IS REQUESTED TO STOP: ", $!active-workers if $.debug;
+                    done;
+                    return;
+                }
+                default {
+                    .rethrow
+                }
+            }
         }
     }
 }
@@ -366,10 +387,24 @@ method get-await-handle ( --> Awaitable::Handle:D ) {
 method do-async (&code, |params) {
     my $closed = self!queue.closed;
     unless $closed.status ~~ Kept {
-        self!inc-queue;
-        self!queue.send(
-            AWCode.new( :&code, :params(params), :manager(self) )
-        );
+        $!ql.protect: {
+            $!queued⚛++;
+            self!queue.send(
+                AWCode.new( :&code, :params(params), :manager(self) )
+            );
+            if $!hi-threshold and $!queued >= $!hi-threshold {
+                $!messages.emit(
+                    Async::Msg::Queue.new(status => QFull)
+                );
+                note "//// Blocking until queue decreased" if $.debug;
+                $!qbl.protect: {
+                    $!queue-blocked ⚛= 1;
+                    $!queue-block.wait;
+                    note "//// Queue unblocked" if $.debug;
+                }
+                # note "??????? [{$*THREAD.id}] QUEUE BLOCKED: ", $!queue-blocked, " total ", $!queued if $.debug;
+            }
+        }
     }
 }
 
@@ -382,19 +417,17 @@ method set-threshold(UInt :$lo where * > 0, Num :$hi where * > 0) {
 
 multi method workers (UInt:D $max where * > 0) {
     return if $max == $!max-workers;
-    $!wl.protect: {
-        my $old-max = $!max-workers;
-        $!max-workers = $max;
+    my $old-max = $!max-workers;
+    $!max-workers = $max;
 
-        if $max < $old-max {
-            for 1..($old-max - $max) {
-                # This would stop the necessary number of workers
-                self.do-async: { stop-worker }
-            }
+    if $max < $old-max {
+        for 1..($old-max - $max) {
+            # This would stop the necessary number of workers
+            self.do-async: { stop-worker }
         }
-        else {
-            self!check-workers;
-        }
+    }
+    else {
+        self!check-workers;
     }
 }
 
@@ -406,26 +439,16 @@ method on_msg ( &code ) {
     $!messages.Supply.tap: &code;
 }
 
-has Int $.qfull = 0;
-method !inc-queue {
-    $!ql.lock;
-    if $!hi-threshold.defined and $!queued >= $!hi-threshold {
-        $!overflow.wait;
-    }
-    $!queued⚛++;
-    if $!hi-threshold.defined and $!queued == $!hi-threshold {
-        $!qfull++;
-        $!messages.emit(
-            Async::Msg::Queue.new(status => QFull)
-        );
-    }
-    LEAVE $!ql.unlock;
-}
-
 method !dec-queue {
     $!queued⚛--;
-    if $!queued <= $!lo-threshold {
-        $!overflow.signal_all;
+    note "---------- deced queue: ", $!queued if $.debug;
+    if $!queue-blocked and $!queued <= $!lo-threshold {
+        $!messages.emit: Async::Msg::Queue.new(status => QLow);
+        $!queue-block.signal;
+        $!queue-blocked ⚛= 0;
+    }
+    if $!queued == 0 {
+        $!messages.emit: Async::Msg::Queue.new(status => QEmpty);
     }
 }
 
