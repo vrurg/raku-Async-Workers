@@ -311,8 +311,20 @@ method !call-worker-code (AWCode:D $evt) {
     $evt.code.(|$evt.params);
     LEAVE {
         $!active-workers⚛--;
+        self!dec-queue;
         note "<<<<<<<<<<<< ACTIVE WORKERS LEFT: ", $!active-workers if $.debug;
         $!messages.emit: Async::Msg::Workers.new( status => WComplete );
+    }
+    CONTROL {
+        when CX::AW::StopWorker {
+            $!active-workers⚛--;
+            note "<<<<<<<<<<<< A WORKER[{$*THREAD.id}] IS REQUESTED TO STOP: ", $!active-workers if $.debug;
+            done;
+            return;
+        }
+        default {
+            .rethrow
+        }
     }
 }
 
@@ -322,21 +334,6 @@ method !worker {
         whenever self!queue -> $evt {
             note ">>>>>>>>> WORKER[{$*THREAD.id.fmt: "%3d"}] {self.WHICH} ENTER, queued: ", $!queued, "        " if $.debug;
             $evt.run;
-            LEAVE {
-                note "<<<<<<<<< WORKER[{$*THREAD.id.fmt: "%3d"}] {self.WHICH} DONE, queued: ", $!queued, " workers ", %!workers.elems, "         " if $.debug;
-                self!dec-queue;
-            }
-            CONTROL {
-                when CX::AW::StopWorker {
-                    $!active-workers⚛--;
-                    note "<<<<<<<<<<<< A WORKER[{$*THREAD.id}] IS REQUESTED TO STOP: ", $!active-workers if $.debug;
-                    done;
-                    return;
-                }
-                default {
-                    .rethrow
-                }
-            }
         }
     }
 }
