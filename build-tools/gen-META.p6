@@ -24,7 +24,7 @@ my $m = META6.new(
         'Async::Msg'     => 'lib/Async/Msg.pm6',
     },
     license        => 'Artistic-2.0',
-    production     => True,
+    production     => False,
 );
 
 print $m.to-json;
