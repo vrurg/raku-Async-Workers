@@ -22,7 +22,7 @@ SYNOPSIS
 DESCRIPTION
 ===========
 
-This module provides an easy way to execute a number of tasks in parallel while allowing to limit the number of simultaneous workers. I.e. it won't consume more more resources than a user would consider reasonable.
+This module provides an easy way to execute a number of tasks in parallel while allowing to limit the number of simultaneous workers. I.e. it won't consume more resources than a user would consider reasonable.
 
 Both OO and procedural interfaces are provided.
 
