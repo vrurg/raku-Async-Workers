@@ -157,6 +157,7 @@ Bypasses to C<shutdown> on the singelton.
 unit class Async::Workers:ver<0.0.908>;
 also does Awaitable;
 use Async::Msg;
+use AttrX::Mooish;
 
 my $singleton;
 
@@ -182,15 +183,13 @@ has UInt $.max-workers = 10;
 has UInt $.max-queue = $!max-workers * 2;
 has $.client; # Client object – the one which will provide .worker method
 has UInt $.lo-threshold;
-# has UInt $.lo-threshold is mooish(:lazy);
 has UInt $.hi-threshold;
 has atomicint $.queued = 0;
 has atomicint $.running = 0;
 
 has %!workers;
 has Bool $!shutdown;
-# has Channel $!queue is mooish(:lazy, :clearer);
-has Channel $!evt-queue;
+has Channel $!queue is mooish(:lazy, :clearer);
 has Promise $!monitor;
 
 has Lock::Async $!ql .= new; # Queue lock
@@ -217,8 +216,6 @@ submethod TWEAK(|) {
         if $!lo-threshold > ($!hi-threshold // Inf);
 }
 
-# method build-lo-threshold { $!max-workers }
-
 sub do-async (|c) is export {
     async-workers.do-async(|c)
 }
@@ -227,25 +224,10 @@ sub shutdown-workers is export {
     $singleton.shutdown if $singleton;
 }
 
-# method !build-queue { # For Attrx::Mooish
-#     $!shutdown = False;
-#     self!start-monitor;
-#     Channel.new;
-# }
-
-method !queue {
-    $!ql.with-lock-hidden-from-recursion-check: {
-        unless $!evt-queue {
-            $!shutdown = False;
-            self!start-monitor;
-            $!evt-queue = Channel.new;
-        }
-    }
-    $!evt-queue
-}
-
-method !clear-queue {
-    $!evt-queue = Nil;
+method !build-queue { # For Attrx::Mooish
+    $!shutdown = False;
+    self!start-monitor;
+    Channel.new;
 }
 
 method !check-workers {
@@ -253,7 +235,7 @@ method !check-workers {
     while %!workers.elems < $.max-workers {
         my $worker = start {
             with $.client {
-                .worker(self!queue);
+                .worker($!queue);
             } else {
                 self!worker
             }
@@ -331,7 +313,7 @@ method !call-worker-code (AWCode:D $evt) {
 method !worker {
     note "Worker, entering react" if $.debug;
     react {
-        whenever self!queue -> $evt {
+        whenever $!queue -> $evt {
             note ">>>>>>>>> WORKER[{$*THREAD.id.fmt: "%3d"}] {self.WHICH} ENTER, queued: ", $!queued, "        " if $.debug;
             $evt.run;
         }
@@ -341,7 +323,7 @@ method !worker {
 method shutdown {
     return unless $!wl.protect: { %!workers.elems };
     $!shutdown = True;
-    self!queue.close;
+    $!queue.close;
     await $!monitor;
     self!clear-queue;
     $!queued ⚛= 0;
@@ -382,11 +364,11 @@ method get-await-handle ( --> Awaitable::Handle:D ) {
 }
 
 method do-async (&code, |params) {
-    my $closed = self!queue.closed;
+    my $closed = $!queue.closed;
     unless $closed.status ~~ Kept {
         $!ql.protect: {
             $!queued⚛++;
-            self!queue.send(
+            $!queue.send(
                 AWCode.new( :&code, :params(params), :manager(self) )
             );
             if $!hi-threshold and $!queued >= $!hi-threshold {
