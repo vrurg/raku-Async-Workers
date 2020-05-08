@@ -154,7 +154,7 @@ Bypasses to C<shutdown> on the singelton.
 
 =end pod
 
-unit class Async::Workers:ver<0.0.908>;
+unit class Async::Workers:ver<0.0.909>;
 also does Awaitable;
 use Async::Msg;
 use AttrX::Mooish;
