@@ -1,6 +1,6 @@
 
 MAIN_MOD		=  lib/Async/Workers.pm6
-MOD_VER			:= $(shell perl6 -Ilib -e 'use Async::Workers; Async::Workers.^ver.say')
+MOD_VER			:= $(shell raku -Ilib -e 'use Async::Workers; Async::Workers.^ver.say')
 MOD_NAME_PFX	=  Async-Workers
 MOD_DISTRO		=  $(MOD_NAME_PFX)-$(MOD_VER)
 MOD_ARCH		=  $(MOD_DISTRO).tar.gz
@@ -24,13 +24,13 @@ readme: README.md
 
 README.md: $(MAIN_MOD)
 	@echo "===> Generating $@"
-	@perl6 -I lib --doc=Markdown $^ >$@
+	@raku -I lib --doc=Markdown $^ >$@
 
 html: README.html
 
 README.html: $(MAIN_MOD)
 	@echo "===> Generating $@"
-	@perl6 --doc=HTML $^ >$@
+	@raku --doc=HTML $^ >$@
 
 test:
 	@$(PROVE)
