@@ -1,5 +1,5 @@
 use v6.d;
-use Test;
+use Test::Async;
 use Async::Workers;
 
 plan 2;
