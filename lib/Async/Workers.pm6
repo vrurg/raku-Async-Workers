@@ -335,7 +335,7 @@ method !worker {
 }
 
 method shutdown {
-#    return unless $!workers-registered;
+    return unless $!workers-registered;
     $!shutdown = True;
     $!queue.close;
     await $!monitor;
@@ -360,7 +360,7 @@ my class AsyncWorkersAwaitHandle does Awaitable::Handle {
 }
 
 method get-await-handle ( --> Awaitable::Handle:D ) {
-    if $!queued {
+    if $!queued || $!running {
         AsyncWorkersAwaitHandle.not-ready: -> &on-ready {
             start react {
                 whenever $!messages -> $msg {
