@@ -3,7 +3,7 @@ use Test::Async;
 use Async::Workers;
 use Async::Msg;
 
-plan 4, :parallel, :random;
+plan 5, :parallel, :random;
 
 subtest "Basics" => -> \suite {
     plan 6;
@@ -193,6 +193,21 @@ subtest "Stop Worker", {
     await $w;
 
     is $steps, 1, "a worker has been stopped";
+}
+
+subtest "Single worker" => {
+    plan 1;
+    my $num-workers = 20;
+    my $w = Async::Workers.new(:max-workers(1));
+    my atomicint $counter = 0;
+    for ^$num-workers -> $id; {
+        $w.do-async: {
+            ++⚛$counter;
+        }
+    }
+    $w.shutdown;
+    await $w;
+    is $counter, $num-workers, "single concurrent worker is ok";
 }
 
 done-testing;
