@@ -3,7 +3,7 @@ use Test::Async;
 use Async::Workers;
 use Async::Msg;
 
-plan 5, :parallel, :random;
+plan 6, :parallel, :random;
 
 subtest "Basics" => -> \suite {
     plan 6;
@@ -30,6 +30,35 @@ subtest "Basics" => -> \suite {
 
     sleep .1;
     is $w.workers, 0, "Shut down all workers";
+}
+
+subtest "Await" => -> \suite {
+    plan 3;
+    my $w = Async::Workers.new;
+
+    my $sleep = Promise.new;
+    $w.do-async: { await $sleep; };
+
+    $w.shutdown;
+    suite.start: {
+        sleep 1;
+        is $w.running, 1, "job is still awaiting in 1 second";
+        $sleep.keep(True);
+    }
+    my $awaited-ok;
+    await Promise.anyof(
+            $sleep.then({
+                # Let the await to complete.
+                sleep 10;
+                cas $awaited-ok, Any, False;
+            }),
+            start {
+                await $w;
+                cas $awaited-ok, Any, True;
+            }
+        );
+    ok $awaited-ok, "await awaits as expected";
+    is $w.running, 0, "all running jobs are done by now";
 }
 
 subtest "Limited queue" => {
