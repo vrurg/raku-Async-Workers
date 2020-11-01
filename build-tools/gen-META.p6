@@ -1,4 +1,4 @@
-#!/usr/bin/env perl6
+#!/usr/bin/env raku
 
 use lib <lib>;
 use META6;
@@ -10,21 +10,21 @@ my $m = META6.new(
     version        => Async::Workers.^ver,
     perl-version   => Version.new('6.d'),
     depends        => <AttrX::Mooish>,
-    test-depends   => <Test Test::META Test::When>,
-    build-depends  => <META6 p6doc Pod::To::Markdown>,
+    test-depends   => <Test Test::Async Test::META Test::When>,
+#    build-depends  => <META6 p6doc Pod::To::Markdown>,
     tags           => <threads async>,
     authors        => ['Vadim Belman <vrurg@cpan.org>'],
     auth           => 'github:vrurg',
-    source-url     => 'https://github.com/vrurg/Perl6-Async-Workers.git',
+    source-url     => 'https://github.com/vrurg/raku-Async-Workers.git',
     support        => META6::Support.new(
-        source          => 'https://github.com/vrurg/Perl6-Async-Workers.git',
+        source          => 'https://github.com/vrurg/raku-Async-Workers.git',
     ),
     provides => {
         'Async::Workers' => 'lib/Async/Workers.pm6',
         'Async::Msg'     => 'lib/Async/Msg.pm6',
     },
     license        => 'Artistic-2.0',
-    production     => False,
+    production     => True,
 );
 
 print $m.to-json;
