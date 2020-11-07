@@ -1,43 +1,43 @@
 {
+  "license": "Artistic-2.0",
+  "production": true,
+  "depends": [
+    "AttrX::Mooish"
+  ],
+  "perl": "6.d",
+  "source-url": "https://github.com/vrurg/raku-Async-Workers.git",
+  "build-depends": [
+  ],
+  "version": "0.2",
   "provides": {
+    "Async::Workers::Job": "lib/Async/Workers/Job.rakumod",
     "Async::Workers::Msg": "lib/Async/Workers/Msg.rakumod",
     "Async::Workers::Worker": "lib/Async/Workers/Worker.rakumod",
-    "Async::Workers::X": "lib/Async/Workers/X.rakumod",
     "Async::Workers::CX": "lib/Async/Workers/CX.rakumod",
     "Async::Workers": "lib/Async/Workers.rakumod",
-    "Async::Workers::Job": "lib/Async/Workers/Job.rakumod"
+    "Async::Workers::X": "lib/Async/Workers/X.rakumod"
   },
   "raku": null,
   "authors": [
     "Vadim Belman <vrurg@cpan.org>"
   ],
   "description": "Asynchronous threaded workers",
-  "version": "0.2",
-  "auth": "github:vrurg",
-  "tags": [
-    "threads",
-    "async"
-  ],
-  "meta-version": "0",
-  "production": true,
-  "depends": [
-    "AttrX::Mooish"
-  ],
-  "source-url": "https://github.com/vrurg/raku-Async-Workers.git",
-  "license": "Artistic-2.0",
-  "perl": "6.d",
-  "resources": [
-  ],
   "name": "Async::Workers",
-  "support": {
-    "source": "https://github.com/vrurg/raku-Async-Workers.git"
-  },
-  "build-depends": [
-  ],
   "test-depends": [
     "Test",
     "Test::Async",
     "Test::META",
     "Test::When"
-  ]
+  ],
+  "support": {
+    "source": "https://github.com/vrurg/raku-Async-Workers.git"
+  },
+  "resources": [
+  ],
+  "auth": "github:vrurg",
+  "tags": [
+    "threads",
+    "async"
+  ],
+  "meta-version": "0"
 }
