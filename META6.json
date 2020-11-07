@@ -1,28 +1,14 @@
 {
   "license": "Artistic-2.0",
-  "production": true,
+  "meta-version": "0",
   "depends": [
     "AttrX::Mooish"
   ],
-  "perl": "6.d",
+  "version": "0.2.1",
+  "resources": [
+  ],
   "source-url": "https://github.com/vrurg/raku-Async-Workers.git",
-  "build-depends": [
-  ],
-  "version": "0.2",
-  "provides": {
-    "Async::Workers::Job": "lib/Async/Workers/Job.rakumod",
-    "Async::Workers::Msg": "lib/Async/Workers/Msg.rakumod",
-    "Async::Workers::Worker": "lib/Async/Workers/Worker.rakumod",
-    "Async::Workers::CX": "lib/Async/Workers/CX.rakumod",
-    "Async::Workers": "lib/Async/Workers.rakumod",
-    "Async::Workers::X": "lib/Async/Workers/X.rakumod"
-  },
-  "raku": null,
-  "authors": [
-    "Vadim Belman <vrurg@cpan.org>"
-  ],
   "description": "Asynchronous threaded workers",
-  "name": "Async::Workers",
   "test-depends": [
     "Test",
     "Test::Async",
@@ -32,12 +18,26 @@
   "support": {
     "source": "https://github.com/vrurg/raku-Async-Workers.git"
   },
-  "resources": [
-  ],
+  "perl": "6.d",
+  "raku": null,
+  "provides": {
+    "Async::Workers::Job": "lib/Async/Workers/Job.rakumod",
+    "Async::Workers::CX": "lib/Async/Workers/CX.rakumod",
+    "Async::Workers::Msg": "lib/Async/Workers/Msg.rakumod",
+    "Async::Workers::Worker": "lib/Async/Workers/Worker.rakumod",
+    "Async::Workers::X": "lib/Async/Workers/X.rakumod",
+    "Async::Workers": "lib/Async/Workers.rakumod"
+  },
+  "production": true,
   "auth": "github:vrurg",
   "tags": [
     "threads",
     "async"
   ],
-  "meta-version": "0"
+  "authors": [
+    "Vadim Belman <vrurg@cpan.org>"
+  ],
+  "build-depends": [
+  ],
+  "name": "Async::Workers"
 }

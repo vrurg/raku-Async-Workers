@@ -251,7 +251,7 @@ Bypasses to C<shutdown> on the singleton.
 
 =end pod
 
-unit class Async::Workers:ver<0.2>;
+unit class Async::Workers:ver<0.2.1>;
 also does Awaitable;
 
 use Async::Workers::Msg;
