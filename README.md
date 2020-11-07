@@ -242,5 +242,5 @@ LICENSE
 
 Artistic License 2.0
 
-See the LICENSE file in this distribution.
+See the *LICENSE* file in this distribution.
 
