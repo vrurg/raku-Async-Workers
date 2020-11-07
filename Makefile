@@ -1,11 +1,11 @@
 
-MAIN_MOD		=  lib/Async/Workers.pm6
+MAIN_MOD		=  lib/Async/Workers.rakumod
 MOD_VER			:= $(shell raku -Ilib -e 'use Async::Workers; Async::Workers.^ver.say')
 MOD_NAME_PFX	=  Async-Workers
 MOD_DISTRO		=  $(MOD_NAME_PFX)-$(MOD_VER)
 MOD_ARCH		=  $(MOD_DISTRO).tar.gz
 META			=  META6.json
-META_BUILDER	=  ./build-tools/gen-META.p6
+META_BUILDER	=  ./build-tools/gen-META.raku
 
 PROVE_CMD		=  prove6
 PROVE_FLAGS		=  -l
