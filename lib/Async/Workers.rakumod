@@ -1,257 +1,5 @@
 use v6.d;
-
-=begin pod
-=head1 NAME
-
-C<Async::Workers> - Asynchronous threaded workers
-
-=head1 SYNOPSIS
-
-    use Async::Workers;
-
-    my $wm = Async::Workers.new( :max-workers(5) );
-
-    for 1..10 -> $n {
-        $wm.do-async: {
-            sleep 1.rand;
-            say "Worker #$n";
-        }
-    }
-
-    await $wm;
-
-=head1 DESCRIPTION
-
-This module provides an easy way to execute a number of jobs in parallel while allowing to keep the resources consumed
-by your code under control.
-
-Both OO and procedural interfaces are provided.
-
-=head2 Reliability
-
-This module has been tested by running 20k repetitions of it's test suite using 56 parallel processes. This doesn't
-prove there're no bugs, but what can be told for certain is that within the tested scenarios the robustness is high
-enough.
-
-=head2 Terminology
-
-=item I<job> is what gets executed. Depending on context, a I<job> could be an instance of C<Async::Workers::Job> class,
-or a user provided code object.
-
-=item I<worker> is an instance of C<Async::Workers::Worker> class. It is controlling a dedicated thread in which the job
-code is ran.
-
-=item I<worker manager> or just I<manager> is an instance of C<Async::Workers> class which controls the execution flow
-and manages workers.
-
-=head2 How it works.
-
-The goal is achieved by combining a I<queue of jobs> and a number of pre-spawned threads controlled by I<workers>. A
-job is picked from the queue by a currently unoccupied worker and the code object associated with it is invoked. Since
-the number of workers is limited it is easier to predict and plan CPU usage.
-
-Yet, it is still possible to over-use memory and cause heavy swapping or even overflows in cases when there is too many
-jobs are produced and an average one takes longer to complete than it is needed to generate a new one. To provide some
-control over this situation one can define I<hi> and I<lo> thresholds on the queue size. When the queue contains as many
-jobs, as defined  by the I<hi> threshold, C<do-async> method blocks upon receiving a new job request and unblocks only
-when the queue shortens down to its I<lo> threshold.
-
-The worker manager doesn't start workers until the first job is sent to the queue. It is also possible to shutdown all
-workers if they're no longer needed.
-
-Some internal events are reported with messages from C<Async::Workers::Msg>. See the C<on_msg> method below.
-
-=head1 ATTRIBUTES
-
-=head2 C<max-workers>
-
-Maximum number of workers. Defaults to C<$*KERNEL.cpu-cores>.
-
-=head2 C<max-jobs>
-
-Set the maximum number of jobs a worker should process before stopping and letting the manager to spawn a new one. The
-functionality is not activated if the attribute is left undefined.
-
-=head2 C<lo-threshold>, C<hi-threshold>
-
-Low and high thresholds of the queue size.
-
-=head2 C<queued>
-
-Current queue size. If the queue has been blocked due to reaching C<hi-threshold> then jobs awaiting for unblock are not
-counted toward this value.
-
-=head2 C<running>
-
-The number of currently occupied workers.
-
-=head2 C<completed>
-
-A C<Promise> which is kept when manager completes all jobs after transitioning into I<shutdown> state. When this happens
-the job queue is closed and all workers are requested to stop. Submission of a new job with C<do-async> at this point will
-re-vivify the queue and return the manager into working state.
-
-In case of an internal failure the promise will be broken with an exception.
-
-=head2 C<empty>
-
-A C<Promise> which is kept each time the queue gets emptied. Note that the initially empty queue is not reflected with
-this attribute. Only when the queue contained at least one element and then went down to zero length this promise is
-kept. In other words, it happens when C<Async::Workers::Msg::Queue::Empty> is emitted.
-
-Immediately after being kept the attribute gets replaced with a fresh C<Promise>. So that the following example will
-finish only if the queue has been emptied twice:
-
-    await $wm.empty;
-    await $wm.empty;
-
-=head2 C<quiet>
-
-If set to I<True> then no exceptions thrown by jobs are reported. In this case it is recommended to monitor messages
-for C<Async::Workers::Msg::Job::Died>.
-
-=head1 METHODS
-
-=head2 C<<do-async( &code, |params --> Async::Workers::Job )>>
-
-Takes a C<&code> object and wraps it into a job object. C<params> are passed to C<&code> when it gets executed.
-
-This method blocks if C<hi-threshold> is defined and the queue size has reached the limit.
-
-If no error happens then the method returns an C<Async::Workers::Job> instance. Otherwise it may throw either
-C<X::Manager::Down> if the manager is in C<shutdown> or C<completed> status; or it may throw C<X::Manager::NoQueue> if
-somehow the job queue has not been initialized properly.
-
-=head2 C<shutdown>
-
-Switches the manager into I<shutdown> state and closes the job queue. Since the queue might still contain some
-incomplete jobs it is likely to take some time until the C<completed> promise gets kept. Normally it'd be helpful
-to C<await> for the manager:
-
-    my $wm = Async::Workers.new(...);
-    ...
-    $wm.shutdown;
-    await $wm;
-
-In this case the execution blocks until the job queue is emptied. Note that at this point C<completed> might still not
-been fulfilled because workers are being shutting down in the meanwhile.
-
-=head2 C<workers>
-
-Returns the number of started workers.
-
-=head2 C<workers( UInt $num )>
-
-Sets the maximum number of workers (C<max-workers> attribute). Can be used at any time without shutting down the
-manager:
-
-    $wm = Async::Worker.new: :max-workers(20);
-    $wm.do-async: &job1 for ^$repetitions;
-    $wm.workers($wm.workers - 5);
-    $wm.do-async: &job2 for ^$repetitions;
-
-If user increases the number of workers then as many additional ones are started as necessary.
-
-On the contrary, if the number of workers is reduced then as many of them are requested to stop as needed to meet
-user's demand. B<Note> that this is done by injecting special jobs. It means that for a really long queue it may take
-quite a time before the extra workers receive the stop command. This behaviour may change in the future.
-
-=head2 C<set-threshold( UInt :$lo, Num :$hi )>
-
-Dynamically sets high and low queue thresholds. The high might be set to C<Inf> to define unlimited queue size. Note
-that this would translate into undefined value of C<hi-threshold> attribute.
-
-=head2 C<on_msg( &callback )>
-
-Submits a C<Async::Workers::Msg> message object to user code passed in C<&callback>. Internally this method does tapping
-on a message <Supply> and returns a resulting C<Tap> object (see documentation on C<Supply>).
-
-The following messages can currently be emitted by the manager (names are shortened to not include
-C<Async::Workers::Msg::> prefix):
-
-=item C<Shutdown> - when the manager is switched into shutdown state
-
-=item C<Complete> - when manager completed all jobs and shut down all workers
-
-=item C<Exception> - when an internal failure is intercepted; the related exception object is stored in attribute
-      C<exception>
-
-=item C<Worker> - not emitted, a base class for other C<Worker> messages. Defines attribute C<worker> which contains
-      the worker object
-
-=item C<Worker::Started> - when a new worker thread has started
-
-=item C<Worker::Complete> - when a worker finishes
-
-=item C<Worker::Died> - when a worker throws. C<exception> attribute will then contain the exception thrown. This
-      message normally should not be seen as it signals about an internal error.
-
-=item C<Queue> – not emitted, a base class for other C<Queue> messages. Defines attribute C<size> which contains queue
-      size at the moment when message was emitted.
-
-=item C<Queue::Inc> - queue size inceased; i.e. a new job submitted. Note that if the queue has reached the I<hi>
-      threshold then a job passed to C<do-async> doesn't make it into the queue and thus no message is emitted until
-      the queue is unblocked.
-
-=item C<Queue::Dec> – a job has finished and the queue size is reduced
-
-=item C<Queue::Full> - I<hi> threshold is reached
-
-=item C<Queue::Low> - queue size reduced down to I<lo> threshold
-
-=item C<Queue::Empty> – the queue was emtied
-
-=item C<Job> – not emitted, a parent class of job-related messages. Defines C<job> attribute which holds a
-      C<Async::Workers::Job> object.
-
-=item C<Job::Enter> - emitted right before a worker is about to invoke a job
-
-=item C<Job::Complete> – emitted right after a job finishes
-
-=item C<Job::Died> – when a job throws. C<exception> attribute contains the exception object.
-
-=head1 HELPER SUBS
-
-=head2 C<stop-worker($rc?, :$soft = False)>
-
-Bypasses to the current worker C<stop> method.
-
-If called from within a job code it would cause the worker controlling the job to stop. If this would reduce the number
-of workers to less than C<max-workers> then the manager will spawn as many new ones as needed:
-
-    $wm.do-async: {
-        if $something-went-wrong {
-            stop-worker
-        }
-    }
-
-Note that the job would be stopped too, unless C<:soft> parameter is used. In this case both the job and its worker
-will be allowed to complete. The worker will stop after the job is done.
-
-=head1 PROCEDURAL
-
-Procedural interface hides a singleton object behind it. The following subs are exported by the module:
-
-=head2 C«async-workers( |params --> Async::Workers:D )»
-
-Returns the singleton object. Creates it if necessary. If supplied with parameters they're passed to the constructor. If
-singleton is already created then the parameters are ignored.
-
-=head2 C<do-async>
-
-Bypasses to the corresponding method on the singleton.
-
-    do-async {
-        say "My task";
-    }
-
-=head2 C<shutdown-workers>
-
-Bypasses to C<shutdown> on the singleton.
-
-=end pod
-
-unit class Async::Workers:ver<0.2.1>;
+unit class Async::Workers:ver<0.2.1>:auth<zef:vrurg>:api<0.2.0>;
 also does Awaitable;
 
 use Async::Workers::Msg;
@@ -582,19 +330,34 @@ method !dec-queue {
     }
 }
 
-=begin pod
-
-=head1 AUTHOR
-
-Vadim Belman <vrurg@cpan.org>
-
-=head1 LICENSE
-
-Artistic License 2.0
-
-See the I<LICENSE> file in this distribution.
-
-=end pod
+our sub META6 {
+	use META6;
+    name           => 'Async::Workers',
+    description    => 'Asynchronous threaded workers',
+    version        => Async::Workers.^ver,
+	api			   => Async::Workers.^api,
+	auth		   => Async::Workers.^auth,
+    perl-version   => Version.new('6.d'),
+    rake-version   => Version.new('6.d'),
+    depends        => [<AttrX::Mooish>],
+    test-depends   => <Test Test::Async Test::META Test::When>,
+    tags           => <threads async>,
+    authors        => ['Vadim Belman'],
+    source-url     => 'https://github.com/vrurg/raku-Async-Workers.git',
+    support        => META6::Support.new(
+        source => 'https://github.com/vrurg/raku-Async-Workers.git',
+    ),
+    provides => {
+        'Async::Workers' => 'lib/Async/Workers.rakumod',
+        'Async::Workers::CX' => 'lib/Async/Workers/CX.rakumod',
+        'Async::Workers::Job' => 'lib/Async/Workers/Job.rakumod',
+        'Async::Workers::Msg' => 'lib/Async/Workers/Msg.rakumod',
+        'Async::Workers::Worker' => 'lib/Async/Workers/Worker.rakumod',
+        'Async::Workers::X' => 'lib/Async/Workers/X.rakumod',
+    },
+    license        => 'Artistic-2.0',
+    production     => True,
+}
 
 # Copyright (c) 2019, Vadim Belman <vrurg@cpan.org>
 # vim: ft=perl6

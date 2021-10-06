@@ -1,0 +1,8 @@
+=begin pod
+=CHANGELOG
+
+=head2 v0.2.2
+
+Migrate to build-tools and zef ecosystem
+
+=end pod
