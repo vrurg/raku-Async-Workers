@@ -1,5 +1,5 @@
 use v6.d;
-unit class Async::Workers:ver<0.2.1>:auth<zef:vrurg>:api<0.2.0>;
+unit class Async::Workers:ver<0.2.2>:auth<zef:vrurg>:api<0.2.0>;
 also does Awaitable;
 
 use Async::Workers::Msg;
