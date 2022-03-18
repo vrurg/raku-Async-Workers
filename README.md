@@ -152,7 +152,7 @@ Dynamically sets high and low queue thresholds. The high might be set to `Inf` t
 `on_msg( &callback )`
 ---------------------
 
-Submits a `Async::Workers::Msg` message object to user code passed in `&callback`. Internally this method does tapping on a message <Supply> and returns a resulting `Tap` object (see documentation on `Supply`).
+Submits a `Async::Workers::Msg` message object to user code passed in `&callback`. Internally this method does tapping on a message [`Supply`](https://docs.raku.org/type/Supply) and returns a resulting [`Tap`](https://docs.raku.org/type/Tap) object.
 
 The following messages can currently be emitted by the manager (names are shortened to not include `Async::Workers::Msg::` prefix):
 
@@ -189,6 +189,11 @@ The following messages can currently be emitted by the manager (names are shorte
   * `Job::Complete` – emitted right after a job finishes
 
   * `Job::Died` – when a job throws. `exception` attribute contains the exception object.
+
+`messages`
+----------
+
+This method produces a [`Supply`](https://docs.raku.org/type/Supply) which emits messages.
 
 HELPER SUBS
 ===========

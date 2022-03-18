@@ -162,7 +162,7 @@ that this would translate into undefined value of C<hi-threshold> attribute.
 =head2 C<on_msg( &callback )>
 
 Submits a C<Async::Workers::Msg> message object to user code passed in C<&callback>. Internally this method does tapping
-on a message <Supply> and returns a resulting C<Tap> object (see documentation on C<Supply>).
+on a message L<C<Supply>|https://docs.raku.org/type/Supply> and returns a resulting L<C<Tap>|https://docs.raku.org/type/Tap> object.
 
 The following messages can currently be emitted by the manager (names are shortened to not include
 C<Async::Workers::Msg::> prefix):
@@ -207,6 +207,10 @@ C<Async::Workers::Msg::> prefix):
 =item C<Job::Complete> – emitted right after a job finishes
 
 =item C<Job::Died> – when a job throws. C<exception> attribute contains the exception object.
+
+=head2 C<messages>
+
+This method produces a L<C<Supply>|https://docs.raku.org/type/Supply> which emits messages.
 
 =head1 HELPER SUBS
 
