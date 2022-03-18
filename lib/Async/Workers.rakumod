@@ -163,6 +163,10 @@ multi method message( Msg:D $msg ) {
     $!messages.emit: $msg
 }
 
+method messages(--> Supply:D) {
+    $!messages.Supply
+}
+
 method !throw( Exception \ex, |c ) {
     ex.new(|c).throw
 }
