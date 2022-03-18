@@ -1,5 +1,5 @@
 use v6.d;
-unit class Async::Workers:ver<0.2.2>:auth<zef:vrurg>:api<0.2.0>;
+unit class Async::Workers:ver($?DISTRIBUTION.meta<ver>):auth($?DISTRIBUTION.meta<auth>):api($?DISTRIBUTION.meta<api>);
 also does Awaitable;
 
 use Async::Workers::Msg;
@@ -335,32 +335,7 @@ method !dec-queue {
 }
 
 our sub META6 {
-	use META6;
-    name           => 'Async::Workers',
-    description    => 'Asynchronous threaded workers',
-    version        => Async::Workers.^ver,
-	api			   => Async::Workers.^api,
-	auth		   => Async::Workers.^auth,
-    perl-version   => Version.new('6.d'),
-    rake-version   => Version.new('6.d'),
-    depends        => [<AttrX::Mooish>],
-    test-depends   => <Test Test::Async Test::META Test::When>,
-    tags           => <threads async>,
-    authors        => ['Vadim Belman'],
-    source-url     => 'https://github.com/vrurg/raku-Async-Workers.git',
-    support        => META6::Support.new(
-        source => 'https://github.com/vrurg/raku-Async-Workers.git',
-    ),
-    provides => {
-        'Async::Workers' => 'lib/Async/Workers.rakumod',
-        'Async::Workers::CX' => 'lib/Async/Workers/CX.rakumod',
-        'Async::Workers::Job' => 'lib/Async/Workers/Job.rakumod',
-        'Async::Workers::Msg' => 'lib/Async/Workers/Msg.rakumod',
-        'Async::Workers::Worker' => 'lib/Async/Workers/Worker.rakumod',
-        'Async::Workers::X' => 'lib/Async/Workers/X.rakumod',
-    },
-    license        => 'Artistic-2.0',
-    production     => True,
+    $?DISTRIBUTION.meta
 }
 
 # Copyright (c) 2019, Vadim Belman <vrurg@cpan.org>
