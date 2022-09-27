@@ -1,0 +1,35 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main", "v0.2" ]
+  pull_request:
+    branches: [ "main", "v0.2" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# matrix setup for multiple versions and OSs
+# License: MIT
+
+jobs:
+  raku:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+        rakudo-version:
+          - "latest"
+          - "2021.12"
+          - "2020.12"
+      fail-fast: false
+    uses: vrurg/raku-build-tools/.github/workflows/default-test-workflow.yml@workflow-v1
+    with:
+      os: ${{ matrix.os }}
+      rakudo-version: ${{ matrix.rakudo-version }}
