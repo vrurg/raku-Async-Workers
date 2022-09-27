@@ -1,17 +1,21 @@
 {
-  "api": "0.2.1",
-  "auth": "zef:vrurg",
+  "name": "Async::Workers",
+  "description": "Asynchronous threaded workers",
+  "version": "0.2.900",
+  "meta-version": "0",
   "authors": [
     "Vadim Belman"
   ],
+  "auth": "zef:vrurg",
   "depends": [
     "AttrX::Mooish"
   ],
-  "description": "Asynchronous threaded workers",
-  "license": "Artistic-2.0",
-  "meta-version": "0",
-  "name": "Async::Workers",
-  "production": true,
+  "test-depends": [
+    "Test",
+    "Test::Async",
+    "Test::META",
+    "Test::When"
+  ],
   "provides": {
     "Async::Workers": "lib/Async/Workers.rakumod",
     "Async::Workers::CX": "lib/Async/Workers/CX.rakumod",
@@ -20,21 +24,17 @@
     "Async::Workers::Worker": "lib/Async/Workers/Worker.rakumod",
     "Async::Workers::X": "lib/Async/Workers/X.rakumod"
   },
-  "raku": "6.*",
-  "source-url": "https://github.com/vrurg/raku-Async-Workers.git",
   "support": {
     "source": "https://github.com/vrurg/raku-Async-Workers.git"
   },
+  "license": "Artistic-2.0",
   "tags": [
     "threads",
     "async",
     "job"
   ],
-  "test-depends": [
-    "Test",
-    "Test::Async",
-    "Test::META",
-    "Test::When"
-  ],
-  "version": "0.2.3"
+  "api": "0.2.1",
+  "production": false,
+  "source-url": "https://github.com/vrurg/raku-Async-Workers.git",
+  "raku": "6.*"
 }
