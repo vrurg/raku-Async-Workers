@@ -28,6 +28,9 @@ jobs:
           - "latest"
           - "2021.12"
           - "2020.12"
+        exclude:
+          - os: windows-latest
+            rakudo-version: "2021.12"
       fail-fast: false
     uses: vrurg/raku-build-tools/.github/workflows/default-test-workflow.yml@workflow-v1
     with:
