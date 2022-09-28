@@ -1,7 +1,7 @@
 {
   "name": "Async::Workers",
   "description": "Asynchronous threaded workers",
-  "version": "0.2.3",
+  "version": "0.2.900",
   "meta-version": "0",
   "authors": [
     "Vadim Belman"
@@ -34,7 +34,7 @@
     "job"
   ],
   "api": "0.2.1",
-  "production": true,
+  "production": false,
   "source-url": "https://github.com/vrurg/raku-Async-Workers.git",
   "raku": "6.*"
 }
