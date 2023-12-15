@@ -101,28 +101,11 @@ method !build-queue {
     Channel.new
 }
 
-method do-async ( &code, |args --> Async::Workers::Job ) {
+method do-async ( &code, Str :$name --> Async::Workers::Job ) {
     with $!queue {
         if $!completed.status == Planned && $!shutdown.status == Planned {
             self!start-workers;
-
-            $!ql.lock;
-            LEAVE $!ql.unlock;
-
-            my $size = ++⚛$!queued;
-            self.message: Async::Workers::Msg::Queue::Inc, :$size;
-
-            with $.hi-threshold -> $ht {
-                if $size == $ht {
-                    self.message: Msg::Queue::Full, :$size;
-                }
-                if $size > $ht {
-                    my $qu = $!queue-unblock;
-                    cas($!queue-unblock, $qu, Promise.new);
-                    await $!queue-unblock;
-                }
-            }
-            self!queue-job: &code, args
+            await self!claim-queue-pos();
         }
         else {
             self!throw: X::Manager::Down
@@ -131,10 +114,38 @@ method do-async ( &code, |args --> Async::Workers::Job ) {
     else {
         self!throw: X::Manager::NoQueue
     }
+    self!queue-job: &code, :$name
 }
 
-method !queue-job( &code, Capture:D $args --> Async::Workers::Job ) {
-    my $job = Async::Workers::Job.new(:&code, :$args, :manager( self ));
+method !claim-queue-pos() {
+    my $qu = ⚛$!queue-unblock;
+    await $qu;
+    $!ql.protect: {
+        my $size = ++⚛$!queued;
+        my $stack-id = $*STACK-ID;
+        self.message: Async::Workers::Msg::Queue::Inc, :$size;
+
+        with $.hi-threshold -> $ht {
+            if $size == $ht {
+                self.message: Msg::Queue::Full, :$size;
+            }
+            if $size > $ht {
+                cas $!queue-unblock, {
+                    $qu = .status == Planned ?? $_ !! Promise.new
+                }
+            }
+        }
+    }
+    $qu
+}
+
+has %!current-jobs;
+has $!cj-lock = Lock.new;
+method current-jobs { $!cj-lock.protect: { %!current-jobs.values.eager } }
+
+method !queue-job( &code, Str :$name --> Async::Workers::Job ) {
+    my $job = Async::Workers::Job.new(:&code, :$name, :manager(self));
+    $!cj-lock.protect: { %!current-jobs{$job.id} = $job };
     $!queue.send: $job;
     $job
 }
@@ -146,13 +157,14 @@ method !job-invoke( Async::Workers::Job:D $job ) {
 
 method !job-complete( Async::Workers::Job:D $job ) {
     --⚛$!running;
+    $!cj-lock.protect: { %!current-jobs{$job.id}:delete };
+    LEAVE self!dec-queue;
     if $job.completed.status == Broken {
         my $exception = $job.completed.cause;
         self.message: Async::Workers::Msg::Job::Died, :$job, :$exception;
         self.x-sorry: $exception, "JOB #" ~ $job.id unless $!quiet;
     }
     self.message: Async::Workers::Msg::Job::Complete, :$job;
-    self!dec-queue;
 }
 
 proto method message( | ) {*}
@@ -322,7 +334,8 @@ method !dec-queue {
     my $size = --⚛$!queued;
     if $size == $!lo-threshold {
         self.message: Async::Workers::Msg::Queue::Low, :$size;
-        $!queue-unblock.keep if $!queue-unblock.status == Planned;
+        my $qu ⚛= $!queue-unblock;
+        $qu.keep if $qu.status == Planned;
     }
     if $size == 0 {
         self.message: Async::Workers::Msg::Queue::Empty, :$size;
@@ -339,4 +352,4 @@ our sub META6 {
 }
 
 # Copyright (c) 2019, Vadim Belman <vrurg@cpan.org>
-# vim: ft=perl6
+# vim: ft=raku

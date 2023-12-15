@@ -7,12 +7,12 @@ use Async::Workers::Msg;
 my atomicint $next-id = 0;
 
 has &.code is required;
-has Capture:D $.args = \();
 has Promise:D $.invoked .= new;
 has $!invoked-vow = $!invoked.vow;
 has Promise:D $.completed .= new;
 has $!completion-vow = $!completed.vow;
 has $.id = $next-id⚛++;
+has Str $.name;
 has Instant $.started;
 has Instant $.ended;
 has $.manager;
@@ -33,7 +33,7 @@ method invoke {
     }
     $!started = now;
     $!invoked-vow.keep(True);
-    my $rc = try &!code(|$!args);
+    my $rc = try { &!code.() };
     $!ended = now;
     with $! {
         $!completion-vow.break: $!;
@@ -44,5 +44,8 @@ method invoke {
     $!completed
 }
 
-method is-completed { $!completed.staus != Planned }
-method is-started { $!started.defined }
+method is-completed { (⚛$!completed).staus != Planned }
+method is-started { (⚛$!started).defined }
+
+multi method Str(::?CLASS:D:) { "JOB#" ~ $!id ~ ($!name andthen " '$_'" orelse "") }
+multi method gist(::?CLASS:D:) { self.Str }
