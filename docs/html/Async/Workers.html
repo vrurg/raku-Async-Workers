@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Async::Workers</title>
+    <meta charset="UTF-8">
+    <style>hr,
+img {
+    box-sizing: content-box
+}
+body::after,
+body::before,
+hr::after,
+hr::before {
+    display: table;
+    content: ""
+}
+a,
+a:not([href]) {
+    text-decoration: none
+}
+
+hr,
+svg:not(:root) {
+    overflow: hidden
+}
+
+img,
+table tr {
+    background-color: #fff
+}
+
+pre,
+table {
+    overflow: auto
+}
+
+dl,
+dl dt,
+hr,
+pre code,
+pre>code,
+td,
+th {
+    padding: 0
+}
+
+input,
+pre code {
+    overflow: visible
+}
+
+pre,
+pre code {
+    word-wrap: normal
+}
+
+body {
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+    color: #333;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 16px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    width: 820px;
+    margin: 2em auto;
+}
+
+a {
+    background-color: transparent;
+    -webkit-text-decoration-skip: objects;
+    color: #4078c0
+}
+
+a:active,
+a:hover {
+    outline-width: 0;
+    text-decoration: underline
+}
+
+h1 {
+    margin: .67em 0
+}
+
+img {
+    border-style: none;
+    max-width: 100%
+}
+
+h1,
+h2 {
+    padding-bottom: .3em;
+    border-bottom: 1px solid #eee
+}
+
+input {
+    font: inherit;
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit
+}
+
+* {
+    box-sizing: border-box
+}
+
+strong {
+    font-weight: 600
+}
+
+body::after,
+hr::after {
+    clear: both
+}
+
+table {
+    border-spacing: 0;
+    border-collapse: collapse;
+    display: block;
+    width: 100%
+}
+
+blockquote {
+    margin: 0;
+    padding: 0 1em;
+    color: #777;
+    border-left: .25em solid #ddd
+}
+
+ol ol,
+ul ol {
+    list-style-type: lower-roman
+}
+
+ol ol ol,
+ol ul ol,
+ul ol ol,
+ul ul ol {
+    list-style-type: lower-alpha
+}
+
+dd {
+    margin-left: 0
+}
+
+code {
+    font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace
+}
+
+pre {
+    font: 12px Consolas, "Liberation Mono", Menlo, Courier, monospace
+}
+
+input {
+    -webkit-font-feature-settings: "liga" 0;
+    font-feature-settings: "liga" 0
+}
+
+body>:first-child {
+    margin-top: 0!important
+}
+
+body>:last-child {
+    margin-bottom: 0!important
+}
+
+a:not([href]) {
+    color: inherit
+}
+
+blockquote,
+dl,
+ol,
+p,
+pre,
+table,
+ul {
+    margin-top: 0;
+    margin-bottom: 16px
+}
+
+hr {
+    background: #e7e7e7;
+    height: .25em;
+    margin: 24px 0;
+    border: 0
+}
+
+blockquote>:first-child {
+    margin-top: 0
+}
+
+blockquote>:last-child {
+    margin-bottom: 0
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25
+}
+
+dl dt,
+table th {
+    font-weight: 700
+}
+
+h1 code,
+h1 tt,
+h2 code,
+h2 tt,
+h3 code,
+h3 tt,
+h4 code,
+h4 tt,
+h5 code,
+h5 tt,
+h6 code,
+h6 tt {
+    font-size: inherit
+}
+
+h1 {
+    font-size: 2em
+}
+
+h2 {
+    font-size: 1.5em
+}
+
+h3 {
+    font-size: 1.25em
+}
+
+h4 {
+    font-size: 1em
+}
+
+h5 {
+    font-size: .875em
+}
+
+h6 {
+    font-size: .85em;
+    color: #777
+}
+
+ol,
+ul {
+    padding-left: 2em
+}
+
+ol ol,
+ol ul,
+ul ol,
+ul ul {
+    margin-top: 0;
+    margin-bottom: 0
+}
+
+li>p {
+    margin-top: 16px
+}
+
+li+li {
+    margin-top: .25em
+}
+
+dl dt {
+    margin-top: 16px;
+    font-size: 1em;
+    font-style: italic
+}
+
+dl dd {
+    padding: 0 16px;
+    margin-bottom: 16px
+}
+
+table td,
+table th {
+    padding: 6px 13px;
+    border: 1px solid #ddd
+}
+
+table tr {
+    border-top: 1px solid #ccc
+}
+
+table tr:nth-child(2n) {
+    background-color: #f8f8f8
+}
+
+code {
+    padding: .2em 0;
+    margin: 0;
+    font-size: 85%;
+    background-color: rgba(0, 0, 0, .04);
+    border-radius: 3px
+}
+
+code::after,
+code::before {
+    letter-spacing: -.2em;
+    content: "\00a0"
+}
+
+pre>code {
+    margin: 0;
+    font-size: 100%;
+    word-break: normal;
+    white-space: pre;
+    background: 0 0;
+    border: 0
+}
+
+pre {
+    padding: 16px;
+    font-size: 85%;
+    line-height: 1.45;
+    background-color: #f7f7f7;
+    border-radius: 3px
+}
+
+pre code {
+    display: inline;
+    max-width: auto;
+    margin: 0;
+    line-height: inherit;
+    background-color: transparent;
+    border: 0
+}
+
+pre code::after,
+pre code::before {
+    content: normal
+}
+
+kbd {
+    display: inline-block;
+    padding: 3px 5px;
+    font: 11px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    line-height: 10px;
+    color: #555;
+    vertical-align: middle;
+    background-color: #fcfcfc;
+    border: 1px solid #ccc;
+    border-bottom-color: #bbb;
+    border-radius: 3px;
+    box-shadow: inset 0 -1px 0 #bbb
+}
+
+hr {
+    border-bottom-color: #eee
+}
+</style>
+
+    
+<style class="build-tools-gen-doc">.toc-level-1 .toc-text { padding-left: 1.5em; }
+.toc-level-2 .toc-text { padding-left: 2.5em; }
+.toc-level-3 .toc-text { padding-left: 3.5em; }
+.toc-level-4 .toc-text { padding-left: 4.5em; }
+.toc-level-5 .toc-text { padding-left: 5.5em; }
+#TOC * { border-width: 0; }
+li > p { margin: inherit; }
+li > .pod-block-code { margin-top: 16px; }
+</style></head>
+
+<body class="pod">
+    <div id="___top"></div>
+    <nav class="indexgroup">
+<table id="TOC">
+<caption><h2 id="TOC_Title">Table of Contents</h2></caption>
+<tr class="toc-level-1"><td class="toc-number">1</td><td class="toc-text"><a href="#NAME">NAME</a></td></tr>
+<tr class="toc-level-1"><td class="toc-number">2</td><td class="toc-text"><a href="#SYNOPSIS">SYNOPSIS</a></td></tr>
+<tr class="toc-level-1"><td class="toc-number">3</td><td class="toc-text"><a href="#DESCRIPTION">DESCRIPTION</a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">3.1</td><td class="toc-text"><a href="#Reliability">Reliability</a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">3.2</td><td class="toc-text"><a href="#Terminology">Terminology</a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">3.3</td><td class="toc-text"><a href="#How_it_works.">How it works.</a></td></tr>
+<tr class="toc-level-1"><td class="toc-number">4</td><td class="toc-text"><a href="#ATTRIBUTES">ATTRIBUTES</a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">4.1</td><td class="toc-text"><a href="#max-workers"><code class="pod-code-inline">max-workers</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">4.2</td><td class="toc-text"><a href="#max-jobs"><code class="pod-code-inline">max-jobs</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">4.3</td><td class="toc-text"><a href="#lo-threshold,_hi-threshold"><code class="pod-code-inline">lo-threshold</code>, <code class="pod-code-inline">hi-threshold</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">4.4</td><td class="toc-text"><a href="#queued"><code class="pod-code-inline">queued</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">4.5</td><td class="toc-text"><a href="#running"><code class="pod-code-inline">running</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">4.6</td><td class="toc-text"><a href="#completed"><code class="pod-code-inline">completed</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">4.7</td><td class="toc-text"><a href="#empty"><code class="pod-code-inline">empty</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">4.8</td><td class="toc-text"><a href="#quiet"><code class="pod-code-inline">quiet</code></a></td></tr>
+<tr class="toc-level-1"><td class="toc-number">5</td><td class="toc-text"><a href="#METHODS">METHODS</a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">5.1</td><td class="toc-text"><a href="#do-async(_&amp;code,_%7Cparams_--&gt;_Async::Workers::Job_)"><code class="pod-code-inline">do-async( &amp;code, |params --&gt; Async::Workers::Job )</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">5.2</td><td class="toc-text"><a href="#shutdown"><code class="pod-code-inline">shutdown</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">5.3</td><td class="toc-text"><a href="#workers"><code class="pod-code-inline">workers</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">5.4</td><td class="toc-text"><a href="#workers(_UInt_%24num_)"><code class="pod-code-inline">workers( UInt $num )</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">5.5</td><td class="toc-text"><a href="#set-threshold(_UInt_:%24lo,_Num_:%24hi_)"><code class="pod-code-inline">set-threshold( UInt :$lo, Num :$hi )</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">5.6</td><td class="toc-text"><a href="#on_msg(_&amp;callback_)"><code class="pod-code-inline">on_msg( &amp;callback )</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">5.7</td><td class="toc-text"><a href="#messages"><code class="pod-code-inline">messages</code></a></td></tr>
+<tr class="toc-level-1"><td class="toc-number">6</td><td class="toc-text"><a href="#HELPER_SUBS">HELPER SUBS</a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">6.1</td><td class="toc-text"><a href="#stop-worker(%24rc?,_:%24soft_=_False)"><code class="pod-code-inline">stop-worker($rc?, :$soft = False)</code></a></td></tr>
+<tr class="toc-level-1"><td class="toc-number">7</td><td class="toc-text"><a href="#PROCEDURAL">PROCEDURAL</a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">7.1</td><td class="toc-text"><a href="#async-workers(_%7Cparams_--&gt;_Async::Workers:D_)"><code class="pod-code-inline">async-workers( |params --&gt; Async::Workers:D )</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">7.2</td><td class="toc-text"><a href="#do-async"><code class="pod-code-inline">do-async</code></a></td></tr>
+<tr class="toc-level-2"><td class="toc-number">7.3</td><td class="toc-text"><a href="#shutdown-workers"><code class="pod-code-inline">shutdown-workers</code></a></td></tr>
+<tr class="toc-level-1"><td class="toc-number">8</td><td class="toc-text"><a href="#AUTHOR">AUTHOR</a></td></tr>
+<tr class="toc-level-1"><td class="toc-number">9</td><td class="toc-text"><a href="#LICENSE">LICENSE</a></td></tr>
+
+</table>
+</nav>
+
+
+    <div class="pod-body">
+    <h1 id="NAME"><a class="u" href="#___top" title="go to top of document">NAME</a></h1>
+<p><code>Async::Workers</code> - Asynchronous threaded workers</p>
+<h1 id="SYNOPSIS"><a class="u" href="#___top" title="go to top of document">SYNOPSIS</a></h1>
+<pre class="pod-block-code">use Async::Workers;
+
+my $wm = Async::Workers.new( :max-workers(5) );
+
+for 1..10 -&gt; $n {
+    $wm.do-async: {
+        sleep 1.rand;
+        say "Worker #$n";
+    }
+}
+
+await $wm;</pre>
+<h1 id="DESCRIPTION"><a class="u" href="#___top" title="go to top of document">DESCRIPTION</a></h1>
+<p>This module provides an easy way to execute a number of jobs in parallel while allowing to keep the resources consumed by your code under control.</p>
+<p>Both OO and procedural interfaces are provided.</p>
+<h2 id="Reliability"><a class="u" href="#___top" title="go to top of document">Reliability</a></h2>
+<p>This module has been tested by running 20k repetitions of it's test suite using 56 parallel processes. This doesn't prove there're no bugs, but what can be told for certain is that within the tested scenarios the robustness is high enough.</p>
+<h2 id="Terminology"><a class="u" href="#___top" title="go to top of document">Terminology</a></h2>
+<ul><li><p><em>job</em> is what gets executed. Depending on context, a <em>job</em> could be an instance of <code>Async::Workers::Job</code> class, or a user provided code object.</p>
+</li>
+<li><p><em>worker</em> is an instance of <code>Async::Workers::Worker</code> class. It is controlling a dedicated thread in which the job code is ran.</p>
+</li>
+<li><p><em>worker manager</em> or just <em>manager</em> is an instance of <code>Async::Workers</code> class which controls the execution flow and manages workers.</p>
+</li>
+</ul>
+<h2 id="How_it_works."><a class="u" href="#___top" title="go to top of document">How it works.</a></h2>
+<p>The goal is achieved by combining a <em>queue of jobs</em> and a number of pre-spawned threads controlled by <em>workers</em>. A job is picked from the queue by a currently unoccupied worker and the code object associated with it is invoked. Since the number of workers is limited it is easier to predict and plan CPU usage.</p>
+<p>Yet, it is still possible to over-use memory and cause heavy swapping or even overflows in cases when there is too many jobs are produced and an average one takes longer to complete than it is needed to generate a new one. To provide some control over this situation one can define <em>hi</em> and <em>lo</em> thresholds on the queue size. When the queue contains as many jobs, as defined by the <em>hi</em> threshold, <code>do-async</code> method blocks upon receiving a new job request and unblocks only when the queue shortens down to its <em>lo</em> threshold.</p>
+<p>The worker manager doesn't start workers until the first job is sent to the queue. It is also possible to shutdown all workers if they're no longer needed.</p>
+<p>Some internal events are reported with messages from <code>Async::Workers::Msg</code>. See the <code>on_msg</code> method below.</p>
+<h1 id="ATTRIBUTES"><a class="u" href="#___top" title="go to top of document">ATTRIBUTES</a></h1>
+<h2 id="max-workers"><a class="u" href="#___top" title="go to top of document"><code>max-workers</code></a></h2>
+<p>Maximum number of workers. Defaults to <code>$*KERNEL.cpu-cores</code>.</p>
+<h2 id="max-jobs"><a class="u" href="#___top" title="go to top of document"><code>max-jobs</code></a></h2>
+<p>Set the maximum number of jobs a worker should process before stopping and letting the manager to spawn a new one. The functionality is not activated if the attribute is left undefined.</p>
+<h2 id="lo-threshold,_hi-threshold"><a class="u" href="#___top" title="go to top of document"><code>lo-threshold</code>, <code>hi-threshold</code></a></h2>
+<p>Low and high thresholds of the queue size.</p>
+<h2 id="queued"><a class="u" href="#___top" title="go to top of document"><code>queued</code></a></h2>
+<p>Current queue size. If the queue has been blocked due to reaching <code>hi-threshold</code> then jobs awaiting for unblock are not counted toward this value.</p>
+<h2 id="running"><a class="u" href="#___top" title="go to top of document"><code>running</code></a></h2>
+<p>The number of currently occupied workers.</p>
+<h2 id="completed"><a class="u" href="#___top" title="go to top of document"><code>completed</code></a></h2>
+<p>A <code>Promise</code> which is kept when manager completes all jobs after transitioning into <em>shutdown</em> state. When this happens the job queue is closed and all workers are requested to stop. Submission of a new job with <code>do-async</code> at this point will re-vivify the queue and return the manager into working state.</p>
+<p>In case of an internal failure the promise will be broken with an exception.</p>
+<h2 id="empty"><a class="u" href="#___top" title="go to top of document"><code>empty</code></a></h2>
+<p>A <code>Promise</code> which is kept each time the queue gets emptied. Note that the initially empty queue is not reflected with this attribute. Only when the queue contained at least one element and then went down to zero length this promise is kept. In other words, it happens when <code>Async::Workers::Msg::Queue::Empty</code> is emitted.</p>
+<p>Immediately after being kept the attribute gets replaced with a fresh <code>Promise</code>. So that the following example will finish only if the queue has been emptied twice:</p>
+<pre class="pod-block-code">await $wm.empty;
+await $wm.empty;</pre>
+<h2 id="quiet"><a class="u" href="#___top" title="go to top of document"><code>quiet</code></a></h2>
+<p>If set to <em>True</em> then no exceptions thrown by jobs are reported. In this case it is recommended to monitor messages for <code>Async::Workers::Msg::Job::Died</code>.</p>
+<h1 id="METHODS"><a class="u" href="#___top" title="go to top of document">METHODS</a></h1>
+<h2 id="do-async(_&amp;code,_|params_--&gt;_Async::Workers::Job_)"><a class="u" href="#___top" title="go to top of document"><code>do-async( &amp;code, |params --&gt; Async::Workers::Job )</code></a></h2>
+<p>Takes a <code>&amp;code</code> object and wraps it into a job object. <code>params</code> are passed to <code>&amp;code</code> when it gets executed.</p>
+<p>This method blocks if <code>hi-threshold</code> is defined and the queue size has reached the limit.</p>
+<p>If no error happens then the method returns an <code>Async::Workers::Job</code> instance. Otherwise it may throw either <code>X::Manager::Down</code> if the manager is in <code>shutdown</code> or <code>completed</code> status; or it may throw <code>X::Manager::NoQueue</code> if somehow the job queue has not been initialized properly.</p>
+<h2 id="shutdown"><a class="u" href="#___top" title="go to top of document"><code>shutdown</code></a></h2>
+<p>Switches the manager into <em>shutdown</em> state and closes the job queue. Since the queue might still contain some incomplete jobs it is likely to take some time until the <code>completed</code> promise gets kept. Normally it'd be helpful to <code>await</code> for the manager:</p>
+<pre class="pod-block-code">my $wm = Async::Workers.new(...);
+...
+$wm.shutdown;
+await $wm;</pre>
+<p>In this case the execution blocks until the job queue is emptied. Note that at this point <code>completed</code> might still not been fulfilled because workers are being shutting down in the meanwhile.</p>
+<h2 id="workers"><a class="u" href="#___top" title="go to top of document"><code>workers</code></a></h2>
+<p>Returns the number of started workers.</p>
+<h2 id="workers(_UInt_$num_)"><a class="u" href="#___top" title="go to top of document"><code>workers( UInt $num )</code></a></h2>
+<p>Sets the maximum number of workers (<code>max-workers</code> attribute). Can be used at any time without shutting down the manager:</p>
+<pre class="pod-block-code">$wm = Async::Worker.new: :max-workers(20);
+$wm.do-async: &amp;job1 for ^$repetitions;
+$wm.workers($wm.workers - 5);
+$wm.do-async: &amp;job2 for ^$repetitions;</pre>
+<p>If user increases the number of workers then as many additional ones are started as necessary.</p>
+<p>On the contrary, if the number of workers is reduced then as many of them are requested to stop as needed to meet user's demand. <strong>Note</strong> that this is done by injecting special jobs. It means that for a really long queue it may take quite a time before the extra workers receive the stop command. This behaviour may change in the future.</p>
+<h2 id="set-threshold(_UInt_:$lo,_Num_:$hi_)"><a class="u" href="#___top" title="go to top of document"><code>set-threshold( UInt :$lo, Num :$hi )</code></a></h2>
+<p>Dynamically sets high and low queue thresholds. The high might be set to <code>Inf</code> to define unlimited queue size. Note that this would translate into undefined value of <code>hi-threshold</code> attribute.</p>
+<h2 id="on_msg(_&amp;callback_)"><a class="u" href="#___top" title="go to top of document"><code>on_msg( &amp;callback )</code></a></h2>
+<p>Submits a <code>Async::Workers::Msg</code> message object to user code passed in <code>&amp;callback</code>. Internally this method does tapping on a message <a href="https://docs.raku.org/type/Supply"><code>Supply</code></a> and returns a resulting <a href="https://docs.raku.org/type/Tap"><code>Tap</code></a> object.</p>
+<p>The following messages can currently be emitted by the manager (names are shortened to not include <code>Async::Workers::Msg::</code> prefix):</p>
+<ul><li><p><code>Shutdown</code> - when the manager is switched into shutdown state</p>
+</li>
+<li><p><code>Complete</code> - when manager completed all jobs and shut down all workers</p>
+</li>
+<li><p><code>Exception</code> - when an internal failure is intercepted; the related exception object is stored in attribute <code>exception</code></p>
+</li>
+<li><p><code>Worker</code> - not emitted, a base class for other <code>Worker</code> messages. Defines attribute <code>worker</code> which contains the worker object</p>
+</li>
+<li><p><code>Worker::Started</code> - when a new worker thread has started</p>
+</li>
+<li><p><code>Worker::Complete</code> - when a worker finishes</p>
+</li>
+<li><p><code>Worker::Died</code> - when a worker throws. <code>exception</code> attribute will then contain the exception thrown. This message normally should not be seen as it signals about an internal error.</p>
+</li>
+<li><p><code>Queue</code> – not emitted, a base class for other <code>Queue</code> messages. Defines attribute <code>size</code> which contains queue size at the moment when message was emitted.</p>
+</li>
+<li><p><code>Queue::Inc</code> - queue size inceased; i.e. a new job submitted. Note that if the queue has reached the <em>hi</em> threshold then a job passed to <code>do-async</code> doesn't make it into the queue and thus no message is emitted until the queue is unblocked.</p>
+</li>
+<li><p><code>Queue::Dec</code> – a job has finished and the queue size is reduced</p>
+</li>
+<li><p><code>Queue::Full</code> - <em>hi</em> threshold is reached</p>
+</li>
+<li><p><code>Queue::Low</code> - queue size reduced down to <em>lo</em> threshold</p>
+</li>
+<li><p><code>Queue::Empty</code> – the queue was emtied</p>
+</li>
+<li><p><code>Job</code> – not emitted, a parent class of job-related messages. Defines <code>job</code> attribute which holds a <code>Async::Workers::Job</code> object.</p>
+</li>
+<li><p><code>Job::Enter</code> - emitted right before a worker is about to invoke a job</p>
+</li>
+<li><p><code>Job::Complete</code> – emitted right after a job finishes</p>
+</li>
+<li><p><code>Job::Died</code> – when a job throws. <code>exception</code> attribute contains the exception object.</p>
+</li>
+</ul>
+<h2 id="messages"><a class="u" href="#___top" title="go to top of document"><code>messages</code></a></h2>
+<p>This method produces a <a href="https://docs.raku.org/type/Supply"><code>Supply</code></a> which emits messages.</p>
+<h1 id="HELPER_SUBS"><a class="u" href="#___top" title="go to top of document">HELPER SUBS</a></h1>
+<h2 id="stop-worker($rc?,_:$soft_=_False)"><a class="u" href="#___top" title="go to top of document"><code>stop-worker($rc?, :$soft = False)</code></a></h2>
+<p>Bypasses to the current worker <code>stop</code> method.</p>
+<p>If called from within a job code it would cause the worker controlling the job to stop. If this would reduce the number of workers to less than <code>max-workers</code> then the manager will spawn as many new ones as needed:</p>
+<pre class="pod-block-code">$wm.do-async: {
+    if $something-went-wrong {
+        stop-worker
+    }
+}</pre>
+<p>Note that the job would be stopped too, unless <code>:soft</code> parameter is used. In this case both the job and its worker will be allowed to complete. The worker will stop after the job is done.</p>
+<h1 id="PROCEDURAL"><a class="u" href="#___top" title="go to top of document">PROCEDURAL</a></h1>
+<p>Procedural interface hides a singleton object behind it. The following subs are exported by the module:</p>
+<h2 id="async-workers(_|params_--&gt;_Async::Workers:D_)"><a class="u" href="#___top" title="go to top of document"><code>async-workers( |params --&gt; Async::Workers:D )</code></a></h2>
+<p>Returns the singleton object. Creates it if necessary. If supplied with parameters they're passed to the constructor. If singleton is already created then the parameters are ignored.</p>
+<h2 id="do-async"><a class="u" href="#___top" title="go to top of document"><code>do-async</code></a></h2>
+<p>Bypasses to the corresponding method on the singleton.</p>
+<pre class="pod-block-code">do-async {
+    say "My task";
+}</pre>
+<h2 id="shutdown-workers"><a class="u" href="#___top" title="go to top of document"><code>shutdown-workers</code></a></h2>
+<p>Bypasses to <code>shutdown</code> on the singleton.</p>
+<h1 id="AUTHOR"><a class="u" href="#___top" title="go to top of document">AUTHOR</a></h1>
+<p>Vadim Belman &lt;vrurg@cpan.org&gt;</p>
+<h1 id="LICENSE"><a class="u" href="#___top" title="go to top of document">LICENSE</a></h1>
+<p>Artistic License 2.0</p>
+<p>See the <em>LICENSE</em> file in this distribution.</p>
+
+    </div>
+
+    
+</body>
+</html>

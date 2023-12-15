@@ -1,12 +1,24 @@
 =begin pod
-=CHANGELOG
+=config :title<Changes>
+=head1 CHANGELOG
 
-=head2 v0.2.3
+=begin item
+B<v0.3.1>
+
+=item Another race condition must not happen now
+=item C<do-async> don't let pass arguments to its code anymore, but it lets giving jobs names now with C<:name> argument.
+=end item
+
+=begin item
+B<v0.2.3>
 
 =item Added method C<messages>
+=end item
 
-=head2 v0.2.2
+=begin item
+B<v0.2.2>
 
 =item Migrate to build-tools and zef ecosystem
+=end item
 
 =end pod

@@ -1,15 +1,17 @@
 CHANGELOG
 =========
 
+  * **v0.3.1**
 
+      * Another race condition must not happen now
 
-v0.2.3
-------
+      * `do-async` don't let pass arguments to its code anymore, but it lets giving jobs names now with `:name` argument.
 
-  * Added method `messages`
+  * **v0.2.3**
 
-v0.2.2
-------
+      * Added method `messages`
 
-  * Migrate to build-tools and zef ecosystem
+  * **v0.2.2**
+
+      * Migrate to build-tools and zef ecosystem
 

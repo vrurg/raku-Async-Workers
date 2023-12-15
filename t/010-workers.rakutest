@@ -241,8 +241,8 @@ subtest "Await Workers", -> \suite {
     $counter ⚛= 0;
 
     for ^$num-jobs {
-        $wm1.do-async: &code, .5;
-        $wm2.do-async: &code, .5;
+        $wm1.do-async: { &code(.5) };
+        $wm2.do-async: { &code(.5) };
     }
 
     $awaited = Nil;

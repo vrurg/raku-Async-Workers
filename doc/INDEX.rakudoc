@@ -1,0 +1,10 @@
+=begin pod
+=config :!index :title("Async::Workers Document Pages")
+
+=head1 Async::Workers Document Pages
+
+=item L«C«Async::Workers»|rakudoc:Async::Workers»
+=item L«C«Changes»|rakudoc:..::ChangeLog»
+=item L«C«README»|rakudoc:..::README»
+
+=end pod

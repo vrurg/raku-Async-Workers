@@ -1,40 +1,40 @@
 {
-  "name": "Async::Workers",
-  "description": "Asynchronous threaded workers",
-  "version": "0.2.900",
-  "meta-version": "0",
-  "authors": [
-    "Vadim Belman"
-  ],
-  "auth": "zef:vrurg",
-  "depends": [
-    "AttrX::Mooish"
-  ],
-  "test-depends": [
-    "Test",
-    "Test::Async",
-    "Test::META",
-    "Test::When"
-  ],
-  "provides": {
-    "Async::Workers": "lib/Async/Workers.rakumod",
-    "Async::Workers::CX": "lib/Async/Workers/CX.rakumod",
-    "Async::Workers::Job": "lib/Async/Workers/Job.rakumod",
-    "Async::Workers::Msg": "lib/Async/Workers/Msg.rakumod",
-    "Async::Workers::Worker": "lib/Async/Workers/Worker.rakumod",
-    "Async::Workers::X": "lib/Async/Workers/X.rakumod"
-  },
-  "support": {
-    "source": "https://github.com/vrurg/raku-Async-Workers.git"
-  },
-  "license": "Artistic-2.0",
-  "tags": [
-    "threads",
-    "async",
-    "job"
-  ],
-  "api": "0.2.1",
-  "production": false,
-  "source-url": "https://github.com/vrurg/raku-Async-Workers.git",
-  "raku": "6.*"
+    "api": "0.3.0",
+    "auth": "zef:vrurg",
+    "authors": [
+        "Vadim Belman"
+    ],
+    "depends": [
+        "AttrX::Mooish"
+    ],
+    "description": "Asynchronous threaded workers",
+    "license": "Artistic-2.0",
+    "meta-version": "0",
+    "name": "Async::Workers",
+    "production": false,
+    "provides": {
+        "Async::Workers": "lib/Async/Workers.rakumod",
+        "Async::Workers::CX": "lib/Async/Workers/CX.rakumod",
+        "Async::Workers::Job": "lib/Async/Workers/Job.rakumod",
+        "Async::Workers::Msg": "lib/Async/Workers/Msg.rakumod",
+        "Async::Workers::Worker": "lib/Async/Workers/Worker.rakumod",
+        "Async::Workers::X": "lib/Async/Workers/X.rakumod"
+    },
+    "raku": "6.*",
+    "source-url": "https://github.com/vrurg/raku-Async-Workers.git",
+    "support": {
+        "source": "https://github.com/vrurg/raku-Async-Workers.git"
+    },
+    "tags": [
+        "threads",
+        "async",
+        "job"
+    ],
+    "test-depends": [
+        "Test",
+        "Test::Async",
+        "Test::META",
+        "Test::When"
+    ],
+    "version": "0.2.901"
 }

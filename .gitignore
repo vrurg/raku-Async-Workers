@@ -1,4 +1,5 @@
 .idea/
 .precomp/
+.gen-doc-*.json
 Async-Workers-*
 *.iml
