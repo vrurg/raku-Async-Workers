@@ -311,7 +311,7 @@ multi method workers( UInt:D $max where * > 0 ) {
 }
 
 multi method workers ( --> UInt ) {
-    $!active-workers
+    ⚛$!active-workers
 }
 
 method on_msg ( &code ) {
